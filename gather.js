@@ -28,9 +28,10 @@ function gather() {
   var metaPmid = document.head.querySelector('meta[name="citation_pmid"]');
   var pmid = metaPmid.content ? metaPmid.content : undefined;
 
-  var gene = 'gene:' + exact.trim();
+  var tags = ['ClinGen'];
 
-  var tags = [gene];
+  var gene = 'gene:' + exact.trim();
+  tags.push(gene);
 
   if ( doi ) { tags.push('doi:' + doi) }
 
