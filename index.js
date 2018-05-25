@@ -1,3 +1,6 @@
+// runs in a window opened by the bookmarklet, receives messages from the host
+
+// localStorage keys used to remember FSM state and related app state
 const storageKeys = {
   STATE: 'clingen_state',
   GENE: 'clingen_gene',
@@ -9,6 +12,7 @@ const storageKeys = {
   END: 'clingen_end',
 }
 
+// loaded from localStorage when the app loads, updated when messages arrive
 const appVars = {
   GENE: undefined,
   ARTICLE: undefined,
@@ -19,21 +23,19 @@ const appVars = {
   END: undefined
 }
 
+// for message-delivered data other than appVars (e.g. pmid, doi)
 var eventData = {};
 
 const appWindowName = 'ClinGen';
 
+// just public for now, can swap in the group picker as/when needed
 const clingenGroup = '__world__';
 
-// interactive params
-var tokenContainer;
-var userContainer;
-
+// listen for messages from the host
 window.addEventListener('message', function(event) {
   if ( event.data === 'CloseClinGen' ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
-    console.log('index2', event.data);
     eventData = event.data;
     app(event);
   }
@@ -42,21 +44,13 @@ window.addEventListener('message', function(event) {
 // called with a load event initially, then with message events
 function app(event) {
 
-  debugger;
-
   if (event.type==='load') {   // advance state machine to cached FSM state
     var savedState = localStorage.getItem(storageKeys.STATE);
-    console.log(`load before init, savedState ${savedState}, FSM.state ${FSM.state}`);
     FSM.init(); 
-    console.log(`load after init, savedState ${savedState}, FSM.state ${FSM.state}`);
     if (savedState === 'haveGene') {
-      console.log(`load before getGene, savedState ${savedState}, FSM.state ${FSM.state}`);
-      FSM.getGene();
-      console.log(`load after getGene, savedState ${savedState}, FSM.state ${FSM.state}`);
+      FSM.getGene();          
     } else  if (savedState === 'inMonarchLookup') {
-      console.log(`load before inMonarchLookup, savedState ${savedState}, FSM.state ${FSM.state}`);
       FSM.getGene(); FSM.beginMonarchLookup();
-      console.log(`load after inMonarchLookup, savedState ${savedState}, FSM.state ${FSM.state}`);
     }
   } else {                     
     saveApiParams(event.data);  // save params for H api call
@@ -74,16 +68,12 @@ function app(event) {
     return;
   }
 
-  // window is open, handle messages
+  // app window is open, handle messages
 
   refreshUiAppVars();
   
   clearUI();
-  
-    // initialize  interactive params
-  tokenContainer = getById('tokenContainer');
-  userContainer = getById('userContainer');
-
+    
   appendViewer(`
   <p>Current article: ${appVars.ARTICLE}
   <p>Current gene: ${appVars.GENE}
@@ -132,18 +122,21 @@ function app(event) {
 
 // workflow functions
 
+// helper for getGene()
 function _getGene() {
   var params = getApiBaseParams();
   params.tags.push('gene:' + appVars.SELECTION);
   params.tags = params.tags.concat(getPmidAndDoi());
   const payload = createAnnotationPayload(params);
   const token = getToken();
-  postAnnotationUpdateStateAndRedirect(payload, token, 'annotations:query:', 'getGene');
+  postAnnotationAndUpdateState(payload, token, 'getGene');
 }
 
+// runs from postAnnotationAndUpdateState(_, _, 'getGene')
+// creates a button that invovkes the _getGene helper
 function getGene() {
-  createApiTokenInputForm(tokenContainer);
-  createUserInputForm(userContainer);
+  createApiTokenInputForm(getById('tokenContainer');
+  createUserInputForm(getById('userContainer');
   var params = getApiBaseParams();
   params.tags = params.tags.concat(getPmidAndDoi());
   writeViewer(`
@@ -156,26 +149,27 @@ function getGene() {
 }
 
 function mseqdrLookup() {
-  //var url = `https://mseqdr.org/search_phenotype.php?hponame=${appVars.SELECTION}&dbsource=HPO`;
-  //location.href = url;
 }
 
+// runs from a link created in the haveGene state
 function monarchLookup() {
   FSM.beginMonarchLookup();
   var url = `https://monarchinitiative.org/search/${appVars.SELECTION}`;
-  window.open(url, appWindowName);
+  window.open(url, appWindowName); 
   window.close();
 }
 
+
+// runs from a link created in the inMonarchLookup state
 function saveMonarchLookup() {
   let params = getApiBaseParams();
   params.text = `Monarch lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`;
-  params.uri = appVars.ARTICLE; // target is the article, /not/ the lookup result page
+  params.uri = appVars.ARTICLE; // because the annotation target is the article, /not/ the lookup result page
   params.tags = params.tags.concat(['hpoLookup', 'monarchLookup', `gene:${appVars.GENE}`]);
   console.log('params for monarch', params);
   const payload = createAnnotationPayload(params);
   const token = getToken();
-  postAnnotationUpdateStateAndRedirect(payload, token, 'annotations:query:', 'saveMonarchLookup');
+  postAnnotationAndUpdateState(payload, token, 'annotations:query:', 'saveMonarchLookup');
 }
 
 // utility functions
@@ -191,30 +185,26 @@ function getPmidAndDoi() {
   return tags;
 }
 
-
+// save params used by h api calls to localStorage
 function saveApiParams(params) {
-  appVars.URL = params.uri;
-  if (appVars.URL) {
-    saveUrl(appVars.URL);
+  if (params.uri) {
+    saveUrl(params.uri);
   }
-  appVars.SELECTION = params.exact;
-  if (appVars.SELECTION) {
-    saveSelection(appVars.SELECTION.trim());
+  if (params.exact) {
+    saveSelection(params.exact.trim.trim());
   }
-  appVars.PREFIX = params.prefix;
-  if (appVars.PREFIX) {
-    savePrefix(appVars.PREFIX);
+  if (params.prefix) {
+    savePrefix(params.prefix);
   }
-  appVars.START = params.start;
-  if (appVars.START) {
-    saveStart(appVars.START);
+  if (params.start) {
+    saveStart(params.start);
   }
-  appVars.END = params.end;
-  if (appVars.END) {
-    saveEnd(appVars.END);
+  if (params.end) {
+    saveEnd(params.end);
   }
 }
 
+// get base params for an annotation
 function getApiBaseParams() {
   return {
     group: clingenGroup,
@@ -228,6 +218,7 @@ function getApiBaseParams() {
   }
 }
 
+// load appVars from localStorage
 function loadAppVars() {
   appVars.GENE = localStorage.getItem(storageKeys.GENE);
   appVars.ARTICLE = localStorage.getItem(storageKeys.ARTICLE);
@@ -238,6 +229,7 @@ function loadAppVars() {
   appVars.END = localStorage.getItem(storageKeys.END);
 }
 
+// update the inspector
 function refreshUiAppVars() {
   setTimeout(function() {
     getById('STATE').innerHTML = FSM.state;
@@ -249,15 +241,12 @@ function refreshUiAppVars() {
     getById('START').innerHTML = appVars.START;
     getById('END').innerHTML = appVars.END;
 
-  }, 0); // defer until end of current tick to allow fsm to complete transaction
+  }, 0); 
 }
 
 function resetWorkflow() {
   Object.values(storageKeys).forEach(storageKey => {
     delete localStorage[storageKey];
-  });
-  Object.values(appVars).forEach(appVar => {
-    delete appVars[appVar];
   });
   window.close()
 }
@@ -277,6 +266,9 @@ function  clearUI() {
   getById('actionButton').innerHTML = '';
 }
 
+
+// save appVars to localStorage
+
 function saveArticle(article) {
   localStorage.setItem(storageKeys.ARTICLE, article);
 }
@@ -293,11 +285,6 @@ function saveSelection(selection) {
   localStorage.setItem(storageKeys.SELECTION, selection);
 }
 
-function clearSelection() {
-  delete localStorage[storageKeys.SELECTION];
-  delete appVars.SELECTION;
-}
-
 function savePrefix(prefix) {
   localStorage.setItem(storageKeys.PREFIX, prefix);
 }
@@ -310,7 +297,8 @@ function saveEnd(end) {
   localStorage.setItem(storageKeys.END, end);
 }
 
-function postAnnotationUpdateStateAndRedirect(payload, token, queryFragment, transition) {
+// post an annotation, then trigger a state transition
+function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     if (transition==='getGene') {
@@ -333,8 +321,6 @@ function postAnnotationUpdateStateAndRedirect(payload, token, queryFragment, tra
         return;
       }
 
-      debugger;
-
       clearUI();
 
       transit(transition);
@@ -352,7 +338,7 @@ function postAnnotationUpdateStateAndRedirect(payload, token, queryFragment, tra
 }
 
 var FSM = function() {
-  debugger
+  
   var fsm = new StateMachine({
 
     transitions: [
@@ -368,7 +354,7 @@ var FSM = function() {
 
       onEnterState: function(lifecycle) {
         console.log('entering', lifecycle.to);
-        localStorage.setItem(storageKeys.STATE, lifecycle.to);
+        localStorage.setItem(storageKeys.STATE, lifecycle.to); // remember current state so we can return to it after a page reload
       },
 
     }
