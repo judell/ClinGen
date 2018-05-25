@@ -1,22 +1,53 @@
 <html>
 <head>
-<title>ClinGen curation helper</title>
+<title>ClinGen gene curation workflow</title>
 <link rel="stylesheet" href="https://jonudell.info/hlib/hlib.css" />
 <script src="https://jonudell.info/hlib/hlib.js"></script>
-<script src="index.js"></script>
+<script src="https://jonudell.info/hlib/visualize.js"></script>
+<script src="https://jonudell.info/hlib/state-machine.js"></script>
+<script async src="index.js"></script>
+<style>
+ li {
+   margin-bottom: 1em;
+ }
+ div.inspector {
+  white-space: pre;
+  font-size: smaller;
+ }
+</style>
 </head>
 
 <body>
 
+<h1>ClinGen curation workflow</h1>  
+
 <div id="formContainer">
   <div id="userContainer"></div>
-  <div id="groupContainer"></div>
   <div id="tokenContainer"></div>
 </div>
 
 <div id="viewer"></div>
 
-<div id="postButton"></div>
+<div id="actionButton"></div>
+
+<hr>
+
+<div class="inspector">
+<!--  
+State: <span id="STATE"></span> 
+  
+Article: <span id="ARTICLE"></span> 
+Gene: <span id="GENE"></span> 
+  
+URL: <span id="URL"></span>
+  Selection: <span id="SELECTION"></span> 
+  Prefix: <span id="PREFIX"></span> 
+  Start: <span id="START"></span> 
+  End: <span id="END"></span> 
+-->
+  
+<button title="start a new gene curation" onclick="resetWorkflow()" class="resetButton">reset</button>
+</div> 
 
 </body>
 </html>
