@@ -24,20 +24,20 @@ const appVars = {
 }
 
 // for message-delivered data other than appVars (e.g. pmid, doi)
-var eventData = {};
+var eventData = {}
 
-const appWindowName = 'ClinGen';
+const appWindowName = 'ClinGen'
 
 // just public for now, can swap in the group picker as/when needed
-const clingenGroup = '__world__';
+const clingenGroup = '__world__'
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
   if ( event.data === 'CloseClinGen' ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
-    eventData = event.data;
-    app(event);
+    eventData = event.data
+    app(event)
   }
 });
 
@@ -45,39 +45,39 @@ window.addEventListener('message', function(event) {
 function app(event) {
 
   if (event.type==='load') {   // advance state machine to cached FSM state
-    var savedState = localStorage.getItem(storageKeys.STATE);
-    FSM.init(); 
+    var savedState = localStorage.getItem(storageKeys.STATE)
+    FSM.init()
     if (savedState === 'haveGene') {
-      FSM.getGene();          
+      FSM.getGene()
     } else  if (savedState === 'inMonarchLookup') {
-      FSM.getGene(); FSM.beginMonarchLookup();
+      FSM.getGene(); FSM.beginMonarchLookup()
     }
   } else {                     
-    saveApiParams(event.data);  // save params for H api call
+    saveApiParams(event.data)  // save params for H api call
   }
 
-  loadAppVars();                
+  loadAppVars()   
 
-  refreshUiAppVars();
+  refreshUiAppVars()
 
   if ( ! event || event.type==='load') {
     appendViewer( 
       `<p>You've added the ClinGen button in another tab. To proceed with curation, 
       go there and click the button.`
-    );
-    return;
+    )
+    return
   }
 
   // app window is open, handle messages
 
-  refreshUiAppVars();
+  refreshUiAppVars()
   
-  clearUI();
+  clearUI()
     
   appendViewer(`
   <p>Current article: ${appVars.ARTICLE}
   <p>Current gene: ${appVars.GENE}
-  `);
+  `)
 
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
@@ -87,18 +87,18 @@ function app(event) {
       <li>Select the name of a gene.
       <li>Click the ClinGen button.
       </ul>`
-    );
+    )
   } else if ( FSM.state === 'needGene' && appVars.SELECTION) {
     appendViewer(`
       <p>Begin a gene curation for <b>${appVars.SELECTION} in ${appVars.URL}</b>
       <p><button onclick="getGene()"> begin </button>`
-    );
+    )
   } else if ( FSM.state === 'haveGene' && ! appVars.SELECTION) {
     appendViewer(`
       <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>.
       <p>Nothing is selected in the current article, however. 
       <p>To proceed with HPO lookups, select a term in the article, then click the ClinGen button to continue.`
-    );
+    )
   } else if (FSM.state === 'haveGene' && appVars.SELECTION) {
     appendViewer(`
       <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>.
@@ -108,15 +108,15 @@ function app(event) {
       <li>Find it <a href="javascript:mseqdrLookup()">mseqdr</a>
       <li>Go back to the current article, select a term for HPO lookup, and click the ClinGen button.
       </ul>`
-    );
+    )
   } else if ( FSM.state === 'inMonarchLookup') {
     appendViewer(`
       <p>Annotate the current article with a reference to  
       <a href="${appVars.URL}">${appVars.URL}</a> as the Monarch lookup result for <i>"${appVars.SELECTION}"</i>?
       <p><button onclick="saveMonarchLookup()">post</button>`
-    );
+    )
   } else {
-    console.log('unexpected state', FSM.state);
+    console.log('unexpected state', FSM.state)
   }
 }
 
@@ -124,28 +124,28 @@ function app(event) {
 
 // helper for getGene()
 function _getGene() {
-  var params = getApiBaseParams();
-  params.tags.push('gene:' + appVars.SELECTION);
-  params.tags = params.tags.concat(getPmidAndDoi());
-  const payload = createAnnotationPayload(params);
-  const token = getToken();
-  postAnnotationAndUpdateState(payload, token, 'getGene');
+  var params = getApiBaseParams()
+  params.tags.push('gene:' + appVars.SELECTION)
+  params.tags = params.tags.concat(getPmidAndDoi())
+  const payload = hlib.createAnnotationPayload(params)
+  const token = hlib.getToken()
+  postAnnotationAndUpdateState(payload, token, 'getGene')
 }
 
 // runs from postAnnotationAndUpdateState(_, _, 'getGene')
 // creates a button that invovkes the _getGene helper
 function getGene() {
-  createApiTokenInputForm(getById('tokenContainer');
-  createUserInputForm(getById('userContainer');
-  var params = getApiBaseParams();
-  params.tags = params.tags.concat(getPmidAndDoi());
+  hlib.createApiTokenInputForm(getById('tokenContainer'))
+  hlib.createUserInputForm(getById('userContainer'))
+  var params = getApiBaseParams()
+  params.tags = params.tags.concat(getPmidAndDoi())
   writeViewer(`
     <div>  
       <p>Post this annotation to begin curation of <b>${appVars.SELECTION}</b>?</p>
       <pre>  ${JSON.stringify(params, null, 2)}  </pre>
     </div>`
-  );
-  getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`;
+  )
+  getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
 }
 
 function mseqdrLookup() {
@@ -153,54 +153,54 @@ function mseqdrLookup() {
 
 // runs from a link created in the haveGene state
 function monarchLookup() {
-  FSM.beginMonarchLookup();
-  var url = `https://monarchinitiative.org/search/${appVars.SELECTION}`;
-  window.open(url, appWindowName); 
-  window.close();
+  FSM.beginMonarchLookup()
+  var url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
+  window.open(url, appWindowName)
+  window.close()
 }
 
 
 // runs from a link created in the inMonarchLookup state
 function saveMonarchLookup() {
-  let params = getApiBaseParams();
-  params.text = `Monarch lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`;
-  params.uri = appVars.ARTICLE; // because the annotation target is the article, /not/ the lookup result page
-  params.tags = params.tags.concat(['hpoLookup', 'monarchLookup', `gene:${appVars.GENE}`]);
-  console.log('params for monarch', params);
-  const payload = createAnnotationPayload(params);
-  const token = getToken();
-  postAnnotationAndUpdateState(payload, token, 'annotations:query:', 'saveMonarchLookup');
+  let params = getApiBaseParams()
+  params.text = `Monarch lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  params.uri = appVars.ARTICLE // because the annotation target is the article, /not/ the lookup result page
+  params.tags = params.tags.concat(['hpoLookup', 'monarchLookup', `gene:${appVars.GENE}`])
+  console.log('params for monarch', params)
+  const payload = hlib.createAnnotationPayload(params)
+  const token = hlib.getToken()
+  postAnnotationAndUpdateState(payload, token, 'annotations:query:', 'saveMonarchLookup')
 }
 
 // utility functions
 
 function getPmidAndDoi() {
-  var tags = [];
+  var tags = []
   if (eventData.pmid) {
-    tags.push('pmid:'+eventData.pmid);
+    tags.push('pmid:'+eventData.pmid)
   }
   if (eventData.doi) {
-    tags.push('doi:'+eventData.doi);
+    tags.push('doi:'+eventData.doi)
   }
-  return tags;
+  return tags
 }
 
 // save params used by h api calls to localStorage
 function saveApiParams(params) {
   if (params.uri) {
-    saveUrl(params.uri);
+    saveUrl(params.uri)
   }
   if (params.exact) {
-    saveSelection(params.exact.trim.trim());
+    saveSelection(params.exact.trim.trim())
   }
   if (params.prefix) {
-    savePrefix(params.prefix);
+    savePrefix(params.prefix)
   }
   if (params.start) {
-    saveStart(params.start);
+    saveStart(params.start)
   }
   if (params.end) {
-    saveEnd(params.end);
+    saveEnd(params.end)
   }
 }
 
@@ -208,7 +208,7 @@ function saveApiParams(params) {
 function getApiBaseParams() {
   return {
     group: clingenGroup,
-    username: getUser(),
+    username: hlib.getUser(),
     uri: appVars.URL,
     exact: appVars.SELECTION,
     prefix: appVars.PREFIX,
@@ -220,81 +220,81 @@ function getApiBaseParams() {
 
 // load appVars from localStorage
 function loadAppVars() {
-  appVars.GENE = localStorage.getItem(storageKeys.GENE);
-  appVars.ARTICLE = localStorage.getItem(storageKeys.ARTICLE);
-  appVars.URL = localStorage.getItem(storageKeys.URL);
-  appVars.SELECTION = localStorage.getItem(storageKeys.SELECTION);
-  appVars.PREFIX = localStorage.getItem(storageKeys.PREFIX);
-  appVars.START = localStorage.getItem(storageKeys.START);
-  appVars.END = localStorage.getItem(storageKeys.END);
+  appVars.GENE = localStorage.getItem(storageKeys.GENE)
+  appVars.ARTICLE = localStorage.getItem(storageKeys.ARTICLE)
+  appVars.URL = localStorage.getItem(storageKeys.URL)
+  appVars.SELECTION = localStorage.getItem(storageKeys.SELECTION)
+  appVars.PREFIX = localStorage.getItem(storageKeys.PREFIX)
+  appVars.START = localStorage.getItem(storageKeys.START)
+  appVars.END = localStorage.getItem(storageKeys.END)
 }
 
 // update the inspector
 function refreshUiAppVars() {
   setTimeout(function() {
-    getById('STATE').innerHTML = FSM.state;
-    getById('ARTICLE').innerHTML = appVars.ARTICLE;
-    getById('GENE').innerHTML = appVars.GENE;
-    getById('URL').innerHTML = appVars.URL;
-    getById('SELECTION').innerHTML = appVars.SELECTION;
-    getById('PREFIX').innerHTML = appVars.PREFIX;
-    getById('START').innerHTML = appVars.START;
-    getById('END').innerHTML = appVars.END;
+    getById('STATE').innerHTML = FSM.state
+    getById('ARTICLE').innerHTML = appVars.ARTICLE
+    getById('GENE').innerHTML = appVars.GENE
+    getById('URL').innerHTML = appVars.URL
+    getById('SELECTION').innerHTML = appVars.SELECTION
+    getById('PREFIX').innerHTML = appVars.PREFIX
+    getById('START').innerHTML = appVars.START
+    getById('END').innerHTML = appVars.END
 
-  }, 0); 
+  }, 0)
 }
 
 function resetWorkflow() {
   Object.values(storageKeys).forEach(storageKey => {
-    delete localStorage[storageKey];
+    delete localStorage[storageKey]
   });
   window.close()
 }
 
 function appendViewer(str) {
-  getById('viewer').innerHTML += str;
+  getById('viewer').innerHTML += str
 }
 
 function writeViewer(str) {
-  getById('viewer').innerHTML = str;
+  getById('viewer').innerHTML = str
 }
 
 function  clearUI() {
-  getById('viewer').innerHTML = '';
-  getById('userContainer').innerHTML = '';
-  getById('tokenContainer').innerHTML = '';
-  getById('actionButton').innerHTML = '';
+  getById('viewer').innerHTML = ''
+  getById('userContainer').innerHTML = ''
+  getById('tokenContainer').innerHTML = ''
+  getById('actionButton').innerHTML = ''
 }
 
 
 // save appVars to localStorage
 
 function saveArticle(article) {
-  localStorage.setItem(storageKeys.ARTICLE, article);
+  localStorage.setItem(storageKeys.ARTICLE, article)
 }
 
 function saveGene(gene) {
-  localStorage.setItem(storageKeys.GENE, gene);
+  localStorage.setItem(storageKeys.GENE, gene)
 }
 
 function saveUrl(url) {
-  localStorage.setItem(storageKeys.URL, url);
+  localStorage.setItem(storageKeys.URL, url)
 }
 
 function saveSelection(selection) {
-  localStorage.setItem(storageKeys.SELECTION, selection);
+  localStorage.setItem(storageKeys.SELECTION, selection)
 }
 
 function savePrefix(prefix) {
-  localStorage.setItem(storageKeys.PREFIX, prefix);
+  localStorage.setItem(storageKeys.PREFIX, prefix)
 }
 
 function saveStart(start) {
-  localStorage.setItem(storageKeys.START, start);
+  localStorage.setItem(storageKeys.START, start)
 }
 
 function saveEnd(end) {
-  localStorage.setItem(storageKeys.END, end);
+  localStorage.setItem(storageKeys.END, end)
 }
 
 // post an annotation, then trigger a state transition
@@ -302,39 +302,39 @@ function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     if (transition==='getGene') {
-      saveArticle(appVars.URL);
-      saveGene(appVars.SELECTION);
-      loadAppVars();
-      FSM.getGene();
+      saveArticle(appVars.URL)
+      saveGene(appVars.SELECTION)
+      loadAppVars()
+      FSM.getGene()
     } else if (transition==='saveMonarchLookup') {
-      FSM.saveMonarchLookup();
+      FSM.saveMonarchLookup()
     }
-    refreshUiAppVars();
+    refreshUiAppVars()
   }
 
-  return postAnnotation(payload, token)
+  return hlib.postAnnotation(payload, token)
     .then(data => {
 
-      var response = JSON.parse(data.response);
+      var response = JSON.parse(data.response)
       if (data.status != 200) {
-        alert(`hlib status ${data.status}`);
-        return;
+        alert(`hlib status ${data.status}`)
+        return
       }
 
-      clearUI();
+      clearUI()
 
-      transit(transition);
+      transit(transition)
 
-      refreshUiAppVars();
+      refreshUiAppVars()
 
       writeViewer(`<p>Annotation posted.
        <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
        <p>Click the ClinGen button to proceed.`
-      );
+      )
     })
     .catch(e => {
-      console.log(e);
-    });
+      console.log(e)
+    })
 }
 
 var FSM = function() {
@@ -358,11 +358,11 @@ var FSM = function() {
       },
 
     }
-  });
+  })
 
-  return fsm;
+  return fsm
 
-}();
+}()
 
-window.onload = app;
+window.onload = app
 
