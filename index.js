@@ -135,8 +135,8 @@ function _getGene() {
 // runs from postAnnotationAndUpdateState(_, _, 'getGene')
 // creates a button that invovkes the _getGene helper
 function getGene() {
-  hlib.createApiTokenInputForm(getById('tokenContainer'))
-  hlib.createUserInputForm(getById('userContainer'))
+  hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
+  hlib.createUserInputForm(hlib.getById('userContainer'))
   var params = getApiBaseParams()
   params.tags = params.tags.concat(getPmidAndDoi())
   writeViewer(`
@@ -232,14 +232,14 @@ function loadAppVars() {
 // update the inspector
 function refreshUiAppVars() {
   setTimeout(function() {
-    getById('STATE').innerHTML = FSM.state
-    getById('ARTICLE').innerHTML = appVars.ARTICLE
-    getById('GENE').innerHTML = appVars.GENE
-    getById('URL').innerHTML = appVars.URL
-    getById('SELECTION').innerHTML = appVars.SELECTION
-    getById('PREFIX').innerHTML = appVars.PREFIX
-    getById('START').innerHTML = appVars.START
-    getById('END').innerHTML = appVars.END
+    hlib.getById('STATE').innerHTML = FSM.state
+    hlib.getById('ARTICLE').innerHTML = appVars.ARTICLE
+    hlib.getById('GENE').innerHTML = appVars.GENE
+    hlib.getById('URL').innerHTML = appVars.URL
+    hlib.getById('SELECTION').innerHTML = appVars.SELECTION
+    hlib.getById('PREFIX').innerHTML = appVars.PREFIX
+    hlib.getById('START').innerHTML = appVars.START
+    hlib.getById('END').innerHTML = appVars.END
 
   }, 0)
 }
@@ -252,18 +252,18 @@ function resetWorkflow() {
 }
 
 function appendViewer(str) {
-  getById('viewer').innerHTML += str
+  hlib.getById('viewer').innerHTML += str
 }
 
 function writeViewer(str) {
-  getById('viewer').innerHTML = str
+  hlib.getById('viewer').innerHTML = str
 }
 
 function  clearUI() {
-  getById('viewer').innerHTML = ''
-  getById('userContainer').innerHTML = ''
-  getById('tokenContainer').innerHTML = ''
-  getById('actionButton').innerHTML = ''
+  hlib.getById('viewer').innerHTML = ''
+  hlib.getById('userContainer').innerHTML = ''
+  hlib.getById('tokenContainer').innerHTML = ''
+  hlib.getById('actionButton').innerHTML = ''
 }
 
 
