@@ -350,6 +350,7 @@ function getSvg() {
         if (t.innerHTML === FSM.state) {
           t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
         }
+        t.innerHTML = `<a xlink:href="javascript:alert('${t.innerHTML}')">${t.innerHTML}</a>`
       })
     })
 }
