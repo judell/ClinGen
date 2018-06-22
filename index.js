@@ -69,9 +69,7 @@ function app(event) {
   }
 
   // app window is open, handle messages
-
-  refreshUiAppVars()
-  
+    
   clearUI()
     
   appendViewer(`
@@ -145,7 +143,7 @@ function getGene() {
       <pre>  ${JSON.stringify(params, null, 2)}  </pre>
     </div>`
   )
-  getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
+  hlib.getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
 }
 
 function mseqdrLookup() {
@@ -169,7 +167,7 @@ function saveMonarchLookup() {
   console.log('params for monarch', params)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'annotations:query:', 'saveMonarchLookup')
+  postAnnotationAndUpdateState(payload, token, 'saveMonarchLookup')
 }
 
 // utility functions
@@ -191,7 +189,7 @@ function saveApiParams(params) {
     saveUrl(params.uri)
   }
   if (params.exact) {
-    saveSelection(params.exact.trim.trim())
+    saveSelection(params.exact.trim())
   }
   if (params.prefix) {
     savePrefix(params.prefix)
