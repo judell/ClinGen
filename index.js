@@ -350,7 +350,12 @@ function getSvg() {
         if (t.innerHTML === FSM.state) {
           t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
         }
-        t.innerHTML = `<a xlink:href="javascript:alert('${t.innerHTML}')">${t.innerHTML}</a>`
+        if ( (t.innerHTML==='haveGene') && (FSM.state==='needGene') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.getGene();javascript:refreshUiAppVars()">${t.innerHTML}</a>`
+        }
+        if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup();javascript:refreshUiAppVars()">${t.innerHTML}</a>`
+        }
       })
     })
 }
