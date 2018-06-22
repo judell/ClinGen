@@ -7,4 +7,4 @@ javascript:(function(){var d=document; var s=d.createElement('script');s.setAttr
 
 Uses https://github.com/jakesgordon/javascript-state-machine and https://github.com/judell/hlib
 
-Demo: http://jonudell.info/h/workflow_02.mp4
+Demos: http://jonudell.info/h/workflow_02.mp4, http://jonudell.info/h/workflow_03.mp4
