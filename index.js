@@ -60,13 +60,14 @@ function app(event) {
 
   refreshUiAppVars()
 
+  /*
   if ( ! event || event.type==='load') {
     appendViewer( 
       `<p>You've added the ClinGen button in another tab. To proceed with curation, 
       go there and click the button.`
     )
     return
-  }
+  }*/
 
   // app window is open, handle messages
     
@@ -229,6 +230,7 @@ function loadAppVars() {
 
 // update the inspector
 function refreshUiAppVars() {
+  getSvg()
   setTimeout(function() {
     hlib.getById('STATE').innerHTML = FSM.state
     hlib.getById('ARTICLE').innerHTML = appVars.ARTICLE
@@ -323,8 +325,6 @@ function postAnnotationAndUpdateState(payload, token, transition) {
 
       transit(transition)
 
-      refreshUiAppVars()
-
       writeViewer(`<p>Annotation posted.
        <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
        <p>Click the ClinGen button to proceed.`
@@ -332,6 +332,25 @@ function postAnnotationAndUpdateState(payload, token, transition) {
     })
     .catch(e => {
       console.log(e)
+    })
+}
+
+function getSvg() {
+  let dot = StateMachineVisualize(FSM);
+  let opts = {
+    method: 'POST',
+    url: 'https://h.jonudell.info/dot',
+    params: dot,
+  }
+  hlib.httpRequest(opts)
+    .then( data => {
+      hlib.getById('graph').innerHTML = data.response
+      let svgTexts = Array.prototype.slice.call(document.querySelectorAll('svg text'))
+      svgTexts.forEach(t => { 
+        if (t.innerHTML === FSM.state) {
+          t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
+        }
+      })
     })
 }
 
