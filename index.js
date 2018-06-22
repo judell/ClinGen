@@ -45,7 +45,7 @@ window.addEventListener('message', function(event) {
 function app(event) {
 
   if (event.type==='load') {   // advance state machine to cached FSM state
-    var savedState = localStorage.getItem(storageKeys.STATE)
+    let savedState = localStorage.getItem(storageKeys.STATE)
     FSM.init()
     if (savedState === 'haveGene') {
       FSM.getGene()
@@ -58,7 +58,7 @@ function app(event) {
 
   loadAppVars()   
 
-  refreshUiAppVars()
+  refreshUI()
 
   /*
   if ( ! event || event.type==='load') {
@@ -123,7 +123,7 @@ function app(event) {
 
 // helper for getGene()
 function _getGene() {
-  var params = getApiBaseParams()
+  let params = getApiBaseParams()
   params.tags.push('gene:' + appVars.SELECTION)
   params.tags = params.tags.concat(getPmidAndDoi())
   const payload = hlib.createAnnotationPayload(params)
@@ -136,7 +136,7 @@ function _getGene() {
 function getGene() {
   hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
   hlib.createUserInputForm(hlib.getById('userContainer'))
-  var params = getApiBaseParams()
+  let params = getApiBaseParams()
   params.tags = params.tags.concat(getPmidAndDoi())
   writeViewer(`
     <div>  
@@ -148,12 +148,14 @@ function getGene() {
 }
 
 function mseqdrLookup() {
+  FSM.beginMseqdrLookup()
+
 }
 
 // runs from a link created in the haveGene state
 function monarchLookup() {
   FSM.beginMonarchLookup()
-  var url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
+  let url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
   window.open(url, appWindowName)
   window.close()
 }
@@ -229,8 +231,9 @@ function loadAppVars() {
 }
 
 // update the inspector
-function refreshUiAppVars() {
+function refreshUI() {
   getSvg()
+  /*
   setTimeout(function() {
     hlib.getById('STATE').innerHTML = FSM.state
     hlib.getById('ARTICLE').innerHTML = appVars.ARTICLE
@@ -242,6 +245,7 @@ function refreshUiAppVars() {
     hlib.getById('END').innerHTML = appVars.END
 
   }, 0)
+  */
 }
 
 function resetWorkflow() {
@@ -309,7 +313,7 @@ function postAnnotationAndUpdateState(payload, token, transition) {
     } else if (transition==='saveMonarchLookup') {
       FSM.saveMonarchLookup()
     }
-    refreshUiAppVars()
+    refreshUI()
   }
 
   return hlib.postAnnotation(payload, token)
@@ -362,7 +366,7 @@ function getSvg() {
 
 var FSM = function() {
   
-  var fsm = new StateMachine({
+  let fsm = new StateMachine({
 
     transitions: [
       { name: 'init',                   from: 'none',                 to: 'needGene'  },

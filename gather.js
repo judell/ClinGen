@@ -75,7 +75,7 @@ function gather() {
     activator.style['z-index'] = 999999999
     activator.innerHTML = '<button id="activateClinGen" title="Activate ClinGen workflow" onclick="gather()">ClinGen</button>'
     document.body.insertBefore(activator, document.body.firstChild)
-    var opener = "width=500, height=500, toolbar=yes"
+    var opener = "width=800, height=800, toolbar=yes"
 //    ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
     ClinGenWindow = window.open( `https://10.0.0.9:4443/index.html`, '_clingen', opener)
   } else if (!ClinGenWindow.closed) {    // talk to the app
