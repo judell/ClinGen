@@ -51,6 +51,8 @@ function app(event) {
       FSM.getGene()
     } else  if (savedState === 'inMonarchLookup') {
       FSM.getGene(); FSM.beginMonarchLookup()
+    } else if (savedState === 'inMseqdrLookup') {
+      FSM.getGene(); FSM.beginMseqdrLookup()
     }
   } else {                     
     saveApiParams(event.data)  // save params for H api call
@@ -114,6 +116,12 @@ function app(event) {
       <a href="${appVars.URL}">${appVars.URL}</a> as the Monarch lookup result for <i>"${appVars.SELECTION}"</i>?
       <p><button onclick="saveMonarchLookup()">post</button>`
     )
+  } else if ( FSM.state === 'inMseqdrLookup') {
+      appendViewer(`
+        <p>Annotate the current article with a reference to  
+        <a href="${appVars.URL}">${appVars.URL}</a> as the Mseqdr lookup result for <i>"${appVars.SELECTION}"</i>?
+        <p><button onclick="saveMseqdrLookup()">post</button>`
+      )    
   } else {
     console.log('unexpected state', FSM.state)
   }
@@ -147,11 +155,6 @@ function getGene() {
   hlib.getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
 }
 
-function mseqdrLookup() {
-  FSM.beginMseqdrLookup()
-
-}
-
 // runs from a link created in the haveGene state
 function monarchLookup() {
   FSM.beginMonarchLookup()
@@ -159,7 +162,6 @@ function monarchLookup() {
   window.open(url, appWindowName)
   window.close()
 }
-
 
 // runs from a link created in the inMonarchLookup state
 function saveMonarchLookup() {
@@ -171,6 +173,25 @@ function saveMonarchLookup() {
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
   postAnnotationAndUpdateState(payload, token, 'saveMonarchLookup')
+}
+
+function mseqdrLookup() {
+  FSM.beginMseqdrLookup()
+  let url = `https://mseqdr.org/search_phenotype.php?hponame=${appVars.SELECTION}&dbsource=HPO`
+  window.open(url, appWindowName)
+  window.close()
+}
+
+// runs from a link created in the inMonarchLookup state
+function saveMseqdrLookup() {
+  let params = getApiBaseParams()
+  params.text = `Mseqdr lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  params.uri = appVars.ARTICLE 
+  params.tags = params.tags.concat(['hpoLookup', 'mseqdrLookup', `gene:${appVars.GENE}`])
+  console.log('params for mseqdr', params)
+  const payload = hlib.createAnnotationPayload(params)
+  const token = hlib.getToken()
+  postAnnotationAndUpdateState(payload, token, 'saveMseqdrLookup')
 }
 
 // utility functions
@@ -312,6 +333,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
       FSM.getGene()
     } else if (transition==='saveMonarchLookup') {
       FSM.saveMonarchLookup()
+    } else if (transition==='saveMseqdrLookup') {
+      FSM.saveMseqdrLookup()
     }
     refreshUI()
   }
@@ -355,10 +378,11 @@ function getSvg() {
           t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
         }
         if ( (t.innerHTML==='haveGene') && (FSM.state==='needGene') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.getGene();javascript:refreshUiAppVars()">${t.innerHTML}</a>`
-        }
-        if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup();javascript:refreshUiAppVars()">${t.innerHTML}</a>`
+          t.innerHTML = `<a xlink:href="javascript:FSM.getGene();javascript:refreshUI()">${t.innerHTML}</a>`
+        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup();javascript:refreshUI()">${t.innerHTML}</a>`
+        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMseqdrLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup();javascript:refreshUI()">${t.innerHTML}</a>`
         }
       })
     })
