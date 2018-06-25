@@ -2,6 +2,19 @@
 
 var ClinGenWindow;
 
+// when there's a selection, move the activator button to it
+document.addEventListener('mouseup', e => {
+  let activator = hlib.getById('activator')
+  if (document.getSelection().type==='Range' && e.target.tagName !== 'BUTTON') {
+    activator.style.left = `${e.pageX}px`
+    activator.style.top = `${e.pageY}px`
+  } else {
+    activator.style.left = 0
+    activator.style.top = 0
+  }
+
+})
+
 if ( typeof ClinGenWindow === 'object' ) {
   alert('The ClinGen app is open in another window. Please use the ClinGen button in this window to continue the workflow.');
 } else {
@@ -10,7 +23,7 @@ if ( typeof ClinGenWindow === 'object' ) {
 
 function remove() {
   if (ClinGenWindow && ClinGenWindow.closed) {
-    document.getElementById('activateClinGen').remove()
+    document.getElementById('activator').remove()
     gather = undefined
     ClinGenWindow = undefined
     clearInterval(intervalId)
@@ -71,13 +84,14 @@ function gather() {
   //   maybe: page metadata (doi, pmid, ...?)
   if (!ClinGenWindow) {   // open the app
     var activator = document.createElement('div')
+    activator.id = 'activator'
     activator.style['position'] = 'absolute'
     activator.style['z-index'] = 999999999
-    activator.innerHTML = '<button id="activateClinGen" title="Activate ClinGen workflow" onclick="gather()">ClinGen</button>'
+    activator.innerHTML = '<button title="Activate ClinGen workflow" onclick="gather()">ClinGen</button>'
     document.body.insertBefore(activator, document.body.firstChild)
     var opener = "width=700, height=800, toolbar=yes, top=-1000"
-    ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
-//    ClinGenWindow = window.open( `https://10.0.0.9:4443/index.html`, '_clingen', opener)
+//    ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
+    ClinGenWindow = window.open( `https://10.0.0.9:4443/index.html`, '_clingen', opener)
   } else if (!ClinGenWindow.closed) {    // talk to the app
     ClinGenWindow.postMessage(params, '*')
   } 
