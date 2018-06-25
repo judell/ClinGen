@@ -11,6 +11,7 @@ document.addEventListener('mouseup', e => {
   } else {
     activator.style.left = 0
     activator.style.top = 0
+    ClinGenWindow.postMessage('ClearSelection', '*')
   }
 
 })

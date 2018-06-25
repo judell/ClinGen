@@ -33,7 +33,13 @@ const clingenGroup = '__world__'
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
-  if ( event.data === 'CloseClinGen' ) {
+  if ( event.data === 'ClearSelection' ) {
+    let selectionSpans = Array.prototype.slice.call(document.querySelectorAll('.clinGenSelection'))
+    selectionSpans.forEach( selectionSpan => {
+      selectionSpan.innerHTML = ''
+      saveSelection('')
+    })
+  } else if ( event.data === 'CloseClinGen' ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
     eventData = event.data
@@ -67,10 +73,9 @@ function app(event) {
   clearUI()
     
   appendViewer(`
-  <p>Current article: ${appVars.ARTICLE}
-  <p>Current gene: ${appVars.GENE}
-  <p>Current selection: ${appVars.SELECTION}
-  `)
+    <p>Current article: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></p>
+    <p>Current gene: <b>${appVars.GENE}</b></p>
+    <p>Current selection: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</p>`)
 
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
@@ -83,7 +88,7 @@ function app(event) {
     )
   } else if ( FSM.state === 'needGene' && appVars.SELECTION) {
     appendViewer(`
-      <p>Begin a gene curation for <b>${appVars.SELECTION} in ${appVars.URL}</b>
+      <p>Begin a gene curation for <b><span class="clinGenSelection">${appVars.SELECTION}</span> in ${appVars.URL}</b>
       <p><button onclick="getGene()"> begin </button>`
     )
   } else if ( FSM.state === 'haveGene' && ! appVars.SELECTION) {
@@ -95,7 +100,7 @@ function app(event) {
   } else if (FSM.state === 'haveGene' && appVars.SELECTION) {
     appendViewer(`
       <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>.
-      <p>Your selection in the current article is <i>${appVars.SELECTION}</i>.  You can:
+      <p>Your selection in the current article is "<span class="clinGenSelection">${appVars.SELECTION}</span>".  You can:
       <ul>
       <li>Find it <a href="javascript:monarchLookup()">monarch</a>
       <li>Find it <a href="javascript:mseqdrLookup()">mseqdr</a>
