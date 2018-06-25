@@ -62,15 +62,6 @@ function app(event) {
 
   refreshUI()
 
-  /*
-  if ( ! event || event.type==='load') {
-    appendViewer( 
-      `<p>You've added the ClinGen button in another tab. To proceed with curation, 
-      go there and click the button.`
-    )
-    return
-  }*/
-
   // app window is open, handle messages
     
   clearUI()
@@ -78,6 +69,7 @@ function app(event) {
   appendViewer(`
   <p>Current article: ${appVars.ARTICLE}
   <p>Current gene: ${appVars.GENE}
+  <p>Current selection: ${appVars.SELECTION}
   `)
 
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
@@ -254,19 +246,6 @@ function loadAppVars() {
 // update the inspector
 function refreshUI() {
   getSvg()
-  /*
-  setTimeout(function() {
-    hlib.getById('STATE').innerHTML = FSM.state
-    hlib.getById('ARTICLE').innerHTML = appVars.ARTICLE
-    hlib.getById('GENE').innerHTML = appVars.GENE
-    hlib.getById('URL').innerHTML = appVars.URL
-    hlib.getById('SELECTION').innerHTML = appVars.SELECTION
-    hlib.getById('PREFIX').innerHTML = appVars.PREFIX
-    hlib.getById('START').innerHTML = appVars.START
-    hlib.getById('END').innerHTML = appVars.END
-
-  }, 0)
-  */
 }
 
 function resetWorkflow() {
