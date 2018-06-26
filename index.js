@@ -102,9 +102,11 @@ function app(event) {
     <li>Do a variant lookup for ${appVars.GENE} in <a href="javascript:clinVGenLookup()">ClinGen</a>`
     
   appendViewer(`
-    <p>Current article: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></p>
-    <p>Current gene: <b>${appVars.GENE}</b></p>
-    <p>Current selection: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</p>`)
+    <div><b>Article</b>: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></div>
+    <div><b>Gene</b>: ${appVars.GENE}</div>
+    <div><b>URL</b>: ${appVars.URL}</div>
+    <div><b>Selection</b>: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</div>`
+  )
 
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
@@ -131,7 +133,6 @@ function app(event) {
   } else if (FSM.state === 'haveGene' && appVars.SELECTION) {
     appendViewer(`
       ${lookupBoilerplate}
-      <p>Your selection in the current article is "<span class="clinGenSelection">${appVars.SELECTION}</span>".  You can:
       <ul>
       ${hpoLookupBoilerplate}
       ${variantLookupBoilerplate}
@@ -151,12 +152,12 @@ function app(event) {
     )
   } else if ( FSM.state === 'inClinVarLookup') {
     appendViewer(`
-      <p>Annotate the current article with ${appVars.SELECTION} as the ClinVar variant ID for ${appVars.GENE}?
+      <p>Annotate the current article with "${appVars.SELECTION}" as the ClinVar variant ID for ${appVars.GENE}?
       <p><button onclick="saveClinVarLookup()">post</button>`
     )
   } else if ( FSM.state === 'inClinGenLookup') {
     appendViewer(`
-      <p>Annotate the current article with ${appVars.SELECTION} as the ClinGen variant ID for ${appVars.GENE}?
+      <p>Annotate the current article with "${appVars.SELECTION}" as the ClinGen variant ID for ${appVars.GENE}?
       <p><button onclick="saveClinGenLookup()">post</button>`
     )    
 } else {
@@ -402,8 +403,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
 
       writeViewer(`<p>Annotation posted.
        <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
-       <p>You can Click the ClinGen button to proceed. 
-       <p>Or you can close this window to suspend the workflow for now.`
+       <p>You can click the ClinGen button to proceed. 
+       <p>Or you can close this window to suspend the workflow, and relaunch ClinGen when ready to proceed.`
       )
     })
     .catch(e => {
