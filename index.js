@@ -402,7 +402,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
 
       writeViewer(`<p>Annotation posted.
        <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
-       <p>Click the ClinGen button to proceed.`
+       <p>You can Click the ClinGen button to proceed. 
+       <p>Or you can close this window to suspend the workflow for now.`
       )
     })
     .catch(e => {
