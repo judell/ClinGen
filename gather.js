@@ -93,9 +93,8 @@ function gather() {
     let opener = "width=700, height=800, toolbar=yes, top=-1000"
     //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
     ClinGenWindow = window.open( `https://10.0.0.9:4443/index.html`, '_clingen', opener)
-  } else if (!ClinGenWindow.closed) {    // talk to the app
-    ClinGenWindow.postMessage(params, '*')
   } 
 
+  ClinGenWindow.postMessage(params, '*') // talk to the app
 }
 
