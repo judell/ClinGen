@@ -9,6 +9,7 @@ Uses https://github.com/jakesgordon/javascript-state-machine and https://github.
 
 ## Demos
 
-- http://jonudell.info/h/workflow_02.mp4
-- http://jonudell.info/h/workflow_03.mp4
+- http://jonudell.info/h/workflow_05.mp4
 - http://jonudell.info/h/workflow_04.mp4
+- http://jonudell.info/h/workflow_03.mp4
+- http://jonudell.info/h/workflow_02.mp4
