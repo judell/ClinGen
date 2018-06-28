@@ -10,6 +10,7 @@ const storageKeys = {
   PREFIX: 'clingen_prefix',
   START: 'clingen_start',
   END: 'clingen_end',
+  PMID: 'clingen_pmid',
 }
 
 // loaded from localStorage when the app loads, updated when messages arrive
@@ -20,7 +21,8 @@ const appVars = {
   SELECTION: undefined,
   PREFIX: undefined,
   START: undefined,
-  END: undefined
+  END: undefined,
+  PMID: undefined,
 }
 
 const clearSelectionEvent = {
@@ -42,12 +44,8 @@ const clingenGroup = '__world__'
 // listen for messages from the host
 window.addEventListener('message', function(event) {
   if ( event.data === 'clearSelection' ) {
-    let selectionSpans = Array.prototype.slice.call(document.querySelectorAll('.clinGenSelection'))
-    selectionSpans.forEach( selectionSpan => {
-      selectionSpan.innerHTML = ''
-      saveSelection('')
-      app(clearSelectionEvent)
-    })
+    saveSelection('')
+    app(clearSelectionEvent)
   } else if ( event.data === 'CloseClinGen' ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
@@ -64,14 +62,14 @@ function app(event) {
     FSM.init()
     if (savedState === 'haveGene') {
       FSM.getGene()
-    } else  if (savedState === 'inMonarchLookup') {
+    } else if (savedState === 'inMonarchLookup') {
       FSM.getGene(); FSM.beginMonarchLookup()
     } else if (savedState === 'inMseqdrLookup') {
       FSM.getGene(); FSM.beginMseqdrLookup()
-    } else if (savedState === 'inClinVarLookup') {
-      FSM.getGene(); FSM.beginClinVarLookup()
-    } else if (savedState === 'inClinGenLookup') {
-      FSM.getGene(); FSM.beginClinGenLookup()
+    } else if (savedState === 'inVariantIdLookup') {
+      FSM.getGene(); FSM.beginVariantIdLookup()
+    } else if (savedState === 'inAlleleIdLookup') {
+      FSM.getGene(); FSM.beginAlleleIdLookup()
     }
   } else if (event.type==='clearSelection') {
     // nothing specific to do here, just need a repaint
@@ -87,22 +85,26 @@ function app(event) {
 
   refreshSvg()
 
+  refreshAnnotationSummary()
+
   // app window is open, handle messages
   
   let lookupBoilerplate = `
-    <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a> and/or
-    <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:variantLookup">variant lookups</a>.`
+    <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>,
+      <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:variantIdLookup">variant ID lookups</a>,
+      and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:alleleIdLookup">allele ID lookups</a>`
 
   let hpoLookupBoilerplate = `
-    <li>Do an HPO lookup for the selection in <a href="javascript:monarchLookup()">Monarch</a>
-    <li>Do an HPO lookup for the selection in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
+    <li>Look up the selection in <a href="javascript:monarchLookup()">Monarch</a>
+    <li>Look up the selection in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
 
   let variantLookupBoilerplate = `
-    <li>Do a variant lookup for ${appVars.GENE} in <a href="javascript:clinVarLookup()">ClinVar</a>
-    <li>Do a variant lookup for ${appVars.GENE} in <a href="javascript:clinVGenLookup()">ClinGen</a>`
+    <li>Find the ClinVar variant ID for ${appVars.GENE} in <a href="javascript:variantIdLookup()">ClinVar</a>
+    <li>Find the canonical allele identifier for ${appVars.GENE} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
   appendViewer(`
     <div><b>Article</b>: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></div>
+    <div><b>PMID</b>: <input id="pmid" value="${appVars.PMID}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
     <div><b>Gene</b>: ${appVars.GENE}</div>
     <div><b>URL</b>: ${appVars.URL}</div>
     <div><b>Selection</b>: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</div>`
@@ -127,7 +129,7 @@ function app(event) {
       ${lookupBoilerplate}
       <p>Nothing is selected in the current article. 
       <p>To proceed with HPO lookups, select a term in the article, then click the ClinGen button to save the selection and continue.
-      <p>Variant lookups don't depend on a selection in the article, so you can proceed directly with those.
+      <p>Variant ID lookups and allele lookups don't depend on a selection in the article, so you can proceed directly with those.
       ${variantLookupBoilerplate}`
     )
   } else if (FSM.state === 'haveGene' && appVars.SELECTION) {
@@ -150,15 +152,15 @@ function app(event) {
       <a href="${appVars.URL}">${appVars.URL}</a> as the Mseqdr lookup result for "${appVars.SELECTION}"?
       <p><button onclick="saveMseqdrLookup()">post</button>`
     )
-  } else if ( FSM.state === 'inClinVarLookup') {
+  } else if ( FSM.state === 'inVariantIdLookup') {
     appendViewer(`
-      <p>Annotate the current article with "${appVars.SELECTION}" as the ClinVar variant ID for ${appVars.GENE}?
-      <p><button onclick="saveClinVarLookup()">post</button>`
-    )
-  } else if ( FSM.state === 'inClinGenLookup') {
+    <p>Annotate the current article with "${appVars.SELECTION}" as the ClinVar variant ID for ${appVars.GENE}?
+    <p><button onclick="saveVariantIdLookup()">post</button>`
+  )
+  } else if ( FSM.state === 'inAlleleIdLookup') {
     appendViewer(`
-      <p>Annotate the current article with "${appVars.SELECTION}" as the ClinGen variant ID for ${appVars.GENE}?
-      <p><button onclick="saveClinGenLookup()">post</button>`
+      <p>Annotate the current article with "${appVars.SELECTION}" as the canonical allele ID for ${appVars.GENE}?
+      <p><button onclick="saveAlleleIdLookup()">post</button>`
     )    
 } else {
     console.log('unexpected state', FSM.state)
@@ -230,22 +232,46 @@ function saveMseqdrLookup() {
   postAnnotationAndUpdateState(payload, token, 'saveMseqdrLookup')
 }
 
-function clinVarLookup() {
-  FSM.beginClinVarLookup()
+function variantIdLookup() {
+  FSM.beginVariantIdLookup()
   let url = `https://www.ncbi.nlm.nih.gov/clinvar/?term=${appVars.GENE}`
   window.open(url, appWindowName)
   window.close()
 }
 
-function saveClinVarLookup() {
+function saveVariantIdLookup() {
   let params = getApiBaseParamsMinusSelectors() // the variant id will be saved as a page note on the base article, so omit selectors
-  params.text = `ClinVar lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  params.text = `ClinVar variant ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
   params.uri = appVars.ARTICLE 
-  params.tags = params.tags.concat(['variantLookup', 'clinVarLookup', `gene:${appVars.GENE}`])
+  params.tags = params.tags.concat(['variantIdLookup', `gene:${appVars.GENE}`])
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'saveClinVarLookup')
+  postAnnotationAndUpdateState(payload, token, 'saveVariantIdLookup')
 }
+
+function alleleIdLookup() {
+  FSM.beginAlleleIdLookup()
+  let url = `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/alleles?externalSource=pubmed&p1=${appVars.PMID}`
+  window.open(url, appWindowName)
+  window.close()
+}
+
+function saveAlleleIdLookup() {
+  let params = getApiBaseParamsMinusSelectors() 
+  params.text = `ClinGen allele ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  params.uri = appVars.ARTICLE 
+  params.tags = params.tags.concat(['alleleIdLookup', `gene:${appVars.GENE}`])
+  const payload = hlib.createAnnotationPayload(params)
+  const token = hlib.getToken()
+  postAnnotationAndUpdateState(payload, token, 'saveAlleleIdLookup')
+}
+
+function clinGenLookup() {
+}
+
+function saveClinGenLookup() {
+}
+
 
 // utility functions
 
@@ -253,6 +279,7 @@ function getPmidAndDoi() {
   var tags = []
   if (eventData.pmid) {
     tags.push('pmid:'+eventData.pmid)
+    savePmid(pmid)
   }
   if (eventData.doi) {
     tags.push('doi:'+eventData.doi)
@@ -312,6 +339,7 @@ function loadAppVars() {
   appVars.PREFIX = localStorage.getItem(storageKeys.PREFIX)
   appVars.START = localStorage.getItem(storageKeys.START)
   appVars.END = localStorage.getItem(storageKeys.END)
+  appVars.PMID = localStorage.getItem(storageKeys.PMID)
 }
 
 function resetWorkflow() {
@@ -367,6 +395,14 @@ function saveEnd(end) {
   localStorage.setItem(storageKeys.END, end)
 }
 
+function savePmid(pmid) {
+  localStorage.setItem(storageKeys.PMID, pmid)
+}
+
+function savePmidFromInput() {
+  savePmid(hlib.getById(storageKeys.PMID).value)
+}
+
 // post an annotation, then trigger a state transition
 function postAnnotationAndUpdateState(payload, token, transition) {
   
@@ -380,10 +416,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
       FSM.saveMonarchLookup()
     } else if (transition==='saveMseqdrLookup') {
       FSM.saveMseqdrLookup()
-    } else if (transition==='saveClinVarLookup') {
-      FSM.saveClinVarLookup()
-    } else if (transition==='saveClinGenLookup') {
-      FSM.saveClinGenLookup()
+    } else if (transition==='saveVariantIdLookup') {
+      FSM.saveVariantIdLookup()
     }
     refreshSvg()
   }
@@ -435,12 +469,32 @@ function refreshSvg() {
           t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
         } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMseqdrLookup') ) {
           t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inClinVarLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveClinVarLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inClinGenLookup') ) {
-        t.innerHTML = `<a xlink:href="javascript:FSM.saveClinGenLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inVariantIdLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveVariantIdLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inAlleleIdLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
       }
     })
+    })
+}
+
+function refreshAnnotationSummary() {
+  let opts = {
+    method: 'GET',
+    url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE}&tags=gene:${appVars.GENE}`,
+    params: {
+      limit: 200
+    }
+  }
+  hlib.httpRequest(opts)
+    .then( data => {
+      let rows = JSON.parse(data.response).rows
+      let output = `<p>Annotations for ${appVars.GENE}: ${rows.length}</p>`
+      rows.forEach(row =>{
+        let anno = hlib.parseAnnotation(row)
+        output += hlib.showAnnotation(anno, 0, 'https://hypothes.is/search?q=tag:')
+      })
+      hlib.getById('annotations').innerHTML = output
     })
 }
 
@@ -455,10 +509,10 @@ var FSM = function() {
       { name: 'saveMonarchLookup',      from: 'inMonarchLookup',      to: 'haveGene' },
       { name: 'beginMseqdrLookup',      from: 'haveGene',             to: 'inMseqdrLookup' },
       { name: 'saveMseqdrLookup',       from: 'inMseqdrLookup',       to: 'haveGene' },
-      { name: 'beginClinVarLookup',     from: 'haveGene',             to: 'inClinVarLookup' },
-      { name: 'saveClinVarLookup',      from: 'inClinVarLookup',      to: 'haveGene' },
-      { name: 'beginClinGenLookup',     from: 'haveGene',             to: 'inClinGenLookup' },
-      { name: 'saveClinGenLookup',      from: 'inClinGenLookup',      to: 'haveGene' },
+      { name: 'beginVariantIdLookup',   from: 'haveGene',             to: 'inVariantIdLookup' },
+      { name: 'saveVariantIdLookup',    from: 'inVariantIdLookup',    to: 'haveGene' },
+      { name: 'beginAlleleIdLookup',    from: 'haveGene',             to: 'inAlleleIdLookup' },
+      { name: 'saveAlleleIdLookup',     from: 'inAlleleIdLookup',     to: 'haveGene' },
     ],
 
     methods: {
