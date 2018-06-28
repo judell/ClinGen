@@ -5,8 +5,13 @@
 <script src="https://jonudell.info/hlib/hlib.bundle.js"></script>
 <script src="https://jonudell.info/hlib/visualize.js"></script>
 <script src="https://jonudell.info/hlib/state-machine.js"></script>
+<script src="https://jonudell.info/hlib/showdown.js"></script>
 <script async src="index.js"></script>
 <style>
+@import url(https://fonts.googleapis.com/css?family=Raleway:500,400,300,800,700);  
+body {
+  font-family: Raleway;
+ }  
  li {
    margin-bottom: 1em;
  }
@@ -20,6 +25,12 @@
  }
  .clinGenSelection {
    font-style: italic;
+ }
+ a {
+   text-decoration: underline;
+ }
+ .annotationTags a {
+   text-decoration: none;
  }
 </style>
 </head>
@@ -37,12 +48,17 @@
 
 <div id="actionButton"></div>
 
-<hr>
+<h2>Workflow chart</h2>
 
 <div id="graph"></div>
 
-<button title="start a new gene curation" onclick="resetWorkflow()" class="resetButton">reset</button>
-</div> 
+<h2>Annotations</h2>
+
+<div id="annotations"></div>
+
+<p>
+  <button title="start a new gene curation" onclick="resetWorkflow()" class="resetButton">reset</button>
+</p> 
 
 </body>
 </html>
