@@ -81,11 +81,7 @@ function app(event) {
 
   loadAppVars()   
 
-  clearUI()
-
-  refreshSvg()
-
-  refreshAnnotationSummary()
+  refreshUI()
 
   // app window is open, handle messages
   
@@ -266,19 +262,13 @@ function saveAlleleIdLookup() {
   postAnnotationAndUpdateState(payload, token, 'saveAlleleIdLookup')
 }
 
-function clinGenLookup() {
-}
-
-function saveClinGenLookup() {
-}
-
-
 // utility functions
 
 function getPmidAndDoi() {
   var tags = []
-  if (eventData.pmid) {
-    tags.push('pmid:'+eventData.pmid)
+  let pmid = eventData.pmid
+  if (pmid) {
+    tags.push('pmid:' + pmid)
     savePmid(pmid)
   }
   if (eventData.doi) {
@@ -418,8 +408,10 @@ function postAnnotationAndUpdateState(payload, token, transition) {
       FSM.saveMseqdrLookup()
     } else if (transition==='saveVariantIdLookup') {
       FSM.saveVariantIdLookup()
+    } else if (transition==='saveAlleleIdLookup') {
+      FSM.saveAlleleIdLookup()
     }
-    refreshSvg()
+    refreshUI()
   }
 
   return hlib.postAnnotation(payload, token)
@@ -440,10 +432,20 @@ function postAnnotationAndUpdateState(payload, token, transition) {
        <p>You can click the ClinGen button to proceed. 
        <p>Or you can close this window to suspend the workflow, and relaunch ClinGen when ready to proceed.`
       )
+
+      refreshSvg()
+      refresh
+
     })
     .catch(e => {
       console.log(e)
     })
+}
+
+function refreshUI() {
+  clearUI()
+  refreshSvg()
+  refreshAnnotationSummary()
 }
 
 function refreshSvg() {
