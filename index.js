@@ -106,6 +106,7 @@ function app(event) {
     <div><b>Selection</b>: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</div>`
   )
 
+  // state-dependent messages to user
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
       <p>To begin a gene curation:
@@ -165,7 +166,6 @@ function app(event) {
 
 // workflow functions
 
-// helper for getGene()
 function _getGene() {
   let params = getApiBaseParams()
   params.tags.push('gene:' + appVars.SELECTION)
@@ -175,8 +175,10 @@ function _getGene() {
   postAnnotationAndUpdateState(payload, token, 'getGene')
 }
 
-// runs from postAnnotationAndUpdateState(_, _, 'getGene')
-// creates a button that invovkes the _getGene helper
+// Runs from postAnnotationAndUpdateState(_, _, 'getGene')
+// Creates a button that invovkes the _getGene helper.
+// The insertion of a user approval step here may not be required,
+// just being cautious for now.
 function getGene() {
   hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
   hlib.createUserInputForm(hlib.getById('userContainer'))
@@ -191,7 +193,7 @@ function getGene() {
   hlib.getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
 }
 
-// runs from a link created in the haveGene state
+// Runs from a link created in the haveGene state.
 function monarchLookup() {
   FSM.beginMonarchLookup()
   let url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
@@ -199,7 +201,7 @@ function monarchLookup() {
   window.close()
 }
 
-// runs from a link created in the inMonarchLookup state
+// Runs from a link created in the inMonarchLookup state
 function saveMonarchLookup() {
   let params = getApiBaseParams()
   params.text = `Monarch lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
@@ -217,7 +219,6 @@ function mseqdrLookup() {
   window.close()
 }
 
-// runs from a link created in the inMonarchLookup state
 function saveMseqdrLookup() {
   let params = getApiBaseParams()
   params.text = `Mseqdr lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
@@ -394,6 +395,26 @@ function savePmidFromInput() {
 }
 
 // post an annotation, then trigger a state transition
+/*
+Note: Would rather just pass the FSM method here, not a stringified name,
+but when trying to call it in the then clause, this happens:
+
+TypeError: Cannot read property '_fsm' of undefined
+    at target.(anonymous function) (https://jonudell.info/hlib/state-machine.js:624:19)
+    at transit (index.js:405)
+    at hlib.postAnnotation.then.data (index.js:429)
+
+The abstraction is somewhat leaky.
+
+Eval might work, but better not to go there.
+
+Unfortunately that makes this one of several places in the code that need 
+updating when the workflow changes. I'm looking for ways to consolidate the
+duplication because it makes writing a workflow app harder than it needs to be.
+
+If this whole approach pans out, it might be worth making a generator for the
+`transit` method.
+*/
 function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
@@ -401,7 +422,6 @@ function postAnnotationAndUpdateState(payload, token, transition) {
       saveArticle(appVars.URL)
       saveGene(appVars.SELECTION)
       loadAppVars()
-      FSM.getGene()
     } else if (transition==='saveMonarchLookup') {
       FSM.saveMonarchLookup()
     } else if (transition==='saveMseqdrLookup') {
@@ -434,8 +454,6 @@ function postAnnotationAndUpdateState(payload, token, transition) {
       )
 
       refreshSvg()
-      refresh
-
     })
     .catch(e => {
       console.log(e)
@@ -450,7 +468,7 @@ function refreshUI() {
 
 function refreshSvg() {
   let dot = StateMachineVisualize(FSM);
-  dot = dot.replace('{', '{\n  rankdir=LR;')
+  dot = dot.replace('{', '{\n  rankdir=LR;') // use horizontal layout
   let opts = {
     method: 'POST',
     url: 'https://h.jonudell.info/dot',
@@ -464,7 +482,9 @@ function refreshSvg() {
         if (t.innerHTML === FSM.state) {
           t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
         }
-        // add links for clickable transitions
+        // Add links for clickable transitions.
+        // This is another section that can need attention when the state diagram changes, 
+        // and might benefit from a generator.
         if ( (t.innerHTML==='haveGene') && (FSM.state==='needGene') ) {
           t.innerHTML = `<a xlink:href="javascript:FSM.getGene();javascript:app(reloadEvent)">${t.innerHTML}</a>`
         } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
@@ -477,7 +497,7 @@ function refreshSvg() {
           t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
       }
     })
-    })
+  })
 }
 
 function refreshAnnotationSummary() {
