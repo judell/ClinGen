@@ -237,13 +237,23 @@ function variantIdLookup() {
 }
 
 function saveVariantIdLookup() {
-  let params = getApiBaseParamsMinusSelectors() // the variant id will be saved as a page note on the base article, so omit selectors
-  params.text = `ClinVar variant ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
-  params.uri = appVars.ARTICLE 
-  params.tags = params.tags.concat(['variantIdLookup', `gene:${appVars.GENE}`])
-  const payload = hlib.createAnnotationPayload(params)
+  var params = getApiBaseParams() // save an anchored annotation to the lookup page
+  const text = `ClinVar variant ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  const tags = params.tags.concat(['variantIdLookup', `gene:${appVars.GENE}`])
+  params.text = text
+  params.tags = tags
   const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'saveVariantIdLookup')
+  let payload = hlib.createAnnotationPayload(params)
+  hlib.postAnnotation(payload, token)
+    .then( data => {
+      console.log('saveVariantId to lookup page', JSON.parse(data.response))
+      params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
+      params.text = text
+      params.tags = tags
+      params.uri = appVars.ARTICLE
+      payload = hlib.createAnnotationPayload(params)
+      postAnnotationAndUpdateState(payload, token, 'saveVariantIdLookup')
+    })
 }
 
 function alleleIdLookup() {
@@ -254,14 +264,24 @@ function alleleIdLookup() {
 }
 
 function saveAlleleIdLookup() {
-  let params = getApiBaseParamsMinusSelectors() 
-  params.text = `ClinGen allele ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
-  params.uri = appVars.ARTICLE 
-  params.tags = params.tags.concat(['alleleIdLookup', `gene:${appVars.GENE}`])
-  const payload = hlib.createAnnotationPayload(params)
+  var params = getApiBaseParams() // save an anchored annotation to the lookup page
+  const text = `ClinGen allele ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  const tags = params.tags.concat(['alleleIdLookup', `gene:${appVars.GENE}`])
+  params.text = text
+  params.tags = tags
   const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'saveAlleleIdLookup')
-}
+  let payload = hlib.createAnnotationPayload(params)
+  hlib.postAnnotation(payload, token)
+    .then( data => {
+      console.log('saveAlleleId to lookup page', JSON.parse(data.response))
+      params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
+      params.text = text
+      params.tags = tags
+      params.uri = appVars.ARTICLE
+      payload = hlib.createAnnotationPayload(params)
+      postAnnotationAndUpdateState(payload, token, 'saveAlleleIdLookup')
+    })
+}  
 
 // utility functions
 
