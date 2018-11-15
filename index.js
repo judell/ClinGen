@@ -419,6 +419,7 @@ function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     if (transition==='getGene') {
+      FSM.getGene()
       saveArticle(appVars.URL)
       saveGene(appVars.SELECTION)
       loadAppVars()
