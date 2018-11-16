@@ -88,11 +88,13 @@ function gather() {
     activator.id = 'activator'
     activator.style['position'] = 'absolute'
     activator.style['z-index'] = 999999999
+    activator.style['top'] = 0
+    activator.style['left'] = 0
     activator.innerHTML = '<button title="Activate ClinGen workflow" onclick="gather()">ClinGen</button>'
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = "width=700, height=900, toolbar=yes, top=-1000"
     //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
-    ClinGenWindow = window.open( `https://10.0.0.9:4443/index.html`, '_clingen', opener)
+    ClinGenWindow = window.open( `http://10.0.0.9:8000/index.html`, '_clingen', opener)
   } 
 
   ClinGenWindow.postMessage(params, '*') // talk to the app
