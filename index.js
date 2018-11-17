@@ -80,7 +80,7 @@ function app(event) {
 
   loadAppVars()
   
-  if (event.data.invoke) {
+  if (event.data && event.data.invoke) {
     eval(event.data.invoke)
   }  
 

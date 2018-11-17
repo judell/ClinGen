@@ -97,7 +97,11 @@ tests({
             gather({invoke:"getGene()"})
           })
           .then( _ => {
-            resolve()    
+            waitSeconds(2)
+              .then( _ => {
+                assertEquals(localStorage['clingen_state'],'haveGene')
+                resolve()
+              })
           })
         })
       },
