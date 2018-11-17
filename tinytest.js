@@ -7,6 +7,15 @@ const red =  '#ff9999';
 
 let testName
 
+async function waitSeconds(seconds, data) {
+  await delay(seconds)
+  return data
+  }
+
+function delay(seconds) {
+  return new Promise( resolve => setTimeout(resolve, seconds * 1000))
+}  
+
 function log(msg) {
   document.getElementById('log').innerHTML += `<div>${msg}</div>`
 }
@@ -18,14 +27,18 @@ function logError(msg) {
 const TinyTest = {
 
   run: function(tests) {
-    log(testName = 'init')
+
+    log(testName = 'initialStateIsNeedGene')
     tests[testName]()
     .then( () => {
-    log(testName = 'finish')
+    log(testName = 'nextStateIsHaveGene')
     tests[testName]()
     .then( () => {
-    alert('done')
-    }) }) 
+    log(testName = '3')
+    tests[testName]()
+    .then( () => {
+    log('done')
+    }) }) }) 
   },
 
   assert: function(value) {
@@ -58,19 +71,43 @@ setTimeout(function() {
 }, 0)
 
 tests({ 
-  'init'  : function () {
+  'initialStateIsNeedGene'  : function () {
     return new Promise( resolve => {
-      alert('init')
-      resolve()
+      let clinGenKeys = Object.keys(localStorage).filter( key => {
+        return key.startsWith('clingen')
+      })
+      clinGenKeys.forEach( key => {
+        localStorage.removeItem(key)
+      })
+      // let the app window load
+      waitSeconds(2)
+        .then( _ => {
+          assertEquals(localStorage['clingen_state'],'needGene')
+          resolve()
+        })
       })
     },
 
-  'finish'  : function () {
-    return new Promise( resolve => {
-      alert('finish')
-      resolve()
-      })
-    }
+    'nextStateIsHaveGene'  : function () {
+      return new Promise( resolve => {
+        let selection = window.getSelection()
+        window.getSelection().selectAllChildren(hlib.getById('geneName'))
+        waitSeconds(2)
+          .then( _ => {
+            gather({invoke:"getGene()"})
+          })
+          .then( _ => {
+            resolve()    
+          })
+        })
+      },
   
+    '3'  : function () {
+      return new Promise( resolve => {
+        resolve()
+        })
+      }
+  
+    
   })
       

@@ -38,7 +38,7 @@ window.onunload = function() {
   ClinGenWindow.postMessage('CloseClinGen', '*')
 }
 
-function gather() {
+function gather(testArgs) {
 
   // always pass the url at which the bookmarklet activated
   let params = {
@@ -96,6 +96,10 @@ function gather() {
     //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
     ClinGenWindow = window.open( `http://10.0.0.9:8000/index.html`, '_clingen', opener)
   } 
+
+  if (testArgs) {
+    params = Object.assign(testArgs, params)
+  }
 
   ClinGenWindow.postMessage(params, '*') // talk to the app
 }

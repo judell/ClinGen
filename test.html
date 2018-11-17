@@ -1,7 +1,12 @@
 <html>
 <head>
+<title>ClinGen test harness</title>  
 <script src="https://jonudell.info/hlib/hlib.bundle.js"></script>
+<script src="https://jonudell.info/hlib/StandaloneAnchoring.js"></script>
 <style>
+body {
+  margin: .5in;
+}  
 #log {
   margin-top:40px;
 }  
@@ -10,10 +15,31 @@
 
 <body>
 
+<!--
+truncus arteriosus
+    Monarch lookup result: https://monarchinitiative.org/phenotype/HP:0001660
+    ClinGen hpoLookup monarchLookup gene:TMEM260
+-->    
+
+<h1>Mutations in <div id="geneName"><span>TMEM260</span></div> Cause a Pediatric Neurodevelopmental, Cardiac, and Renal Syndrome</h1>
+
+We consulted family 1, a consanguineous Ashkenazi Jewish pedigree, who had experienced three 
+recurrent births with cardiac complications that resulted in perinatal lethality in two of the 
+three children (Figure 1A). Male and female individuals 1-II-1 and 1-II-2, respectively, were 
+born at term and presented with central cyanosis and heart murmur shortly after birth. 
+Echocardiography of 1-II-1 revealed a complex heart defect including truncus arteriosus, 
+a ventricular septal defect (VSD), an interrupted aortic arch, and a partial anomalous 
+pulmonary venous return. 
+
+<p>
+
+</p>
+
 <div id="log"></div>
 
 <script src="gather.js"></script>
-<script src="tinytest.js"></script>
+
+<script defer src="tinytest.js"></script>
 
 </body>
 </html>

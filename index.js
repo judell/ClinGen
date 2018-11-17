@@ -29,10 +29,6 @@ const clearSelectionEvent = {
   type: "clearSelection"
 }
 
-const reloadEvent = {
-  type: "reload"
-}
-
 // for message-delivered data other than appVars (e.g. pmid, doi)
 var eventData = {}
 
@@ -43,6 +39,7 @@ const clingenGroup = '__world__'
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
+  console.log(`listener event ${JSON.stringify(event)}`)
   if ( event.data === 'clearSelection' ) {
     saveSelection('')
     app(clearSelectionEvent)
@@ -51,11 +48,13 @@ window.addEventListener('message', function(event) {
   } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
     eventData = event.data // remember, e.g., the pmid and doi found in the base article
     app(event)
-  }
-});
+  } 
+})
 
 // called with a load event initially, then with message events
 function app(event) {
+
+  console.log(`app event ${JSON.stringify(event,null,2)}`)
 
   if (event.type==='load') {   // advance state machine to cached FSM state
     let savedState = localStorage.getItem(storageKeys.STATE)
@@ -79,7 +78,11 @@ function app(event) {
     saveApiParams(event.data)  // save params for H api call
   }
 
-  loadAppVars()   
+  loadAppVars()
+  
+  if (event.data.invoke) {
+    eval(event.data.invoke)
+  }  
 
   refreshUI()
 
@@ -166,31 +169,15 @@ function app(event) {
 
 // workflow functions
 
-function _getGene() {
+function getGene() {
+  hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
+  hlib.createUserInputForm(hlib.getById('userContainer'))
   let params = getApiBaseParams()
   params.tags.push('gene:' + appVars.SELECTION)
   params.tags = params.tags.concat(getPmidAndDoi())
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
   postAnnotationAndUpdateState(payload, token, 'getGene')
-}
-
-// Runs from postAnnotationAndUpdateState(_, _, 'getGene')
-// Creates a button that invovkes the _getGene helper.
-// The insertion of a user approval step here may not be required,
-// just being cautious for now.
-function getGene() {
-  hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
-  hlib.createUserInputForm(hlib.getById('userContainer'))
-  let params = getApiBaseParams()
-  params.tags = params.tags.concat(getPmidAndDoi())
-  writeViewer(`
-    <div>  
-      <p>Post this annotation to begin curation of <b>${appVars.SELECTION}</b>?</p>
-      <pre>  ${JSON.stringify(params, null, 2)}  </pre>
-    </div>`
-  )
-  hlib.getById('actionButton').innerHTML = `<button onclick="_getGene()">post</button>`
 }
 
 // Runs from a link created in the haveGene state.
@@ -374,7 +361,6 @@ function  clearUI() {
   hlib.getById('tokenContainer').innerHTML = ''
   hlib.getById('actionButton').innerHTML = ''
 }
-
 
 // save appVars to localStorage
 
