@@ -29,6 +29,10 @@ const clearSelectionEvent = {
   type: "clearSelection"
 }
 
+const reloadEvent = {
+  type: "reload"
+}
+
 // for message-delivered data other than appVars (e.g. pmid, doi)
 var eventData = {}
 
