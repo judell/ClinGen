@@ -7,6 +7,8 @@ const red =  '#ff9999';
 
 let testName
 
+let testUrl = 'http://10.0.0.9:8000/test.html'
+
 async function waitSeconds(seconds, data) {
   await delay(seconds)
   return data
@@ -34,7 +36,7 @@ const TinyTest = {
     log(testName = 'geneNameSelectionIsSuccessful')
     tests[testName]()
     .then( () => {
-    log(testName = 'inMonarchLookup')
+    log(testName = 'monarchLookupIsSuccessful')
     tests[testName]()
     .then( () => {
     log('done')
@@ -79,14 +81,20 @@ tests({
       clinGenKeys.forEach( key => {
         localStorage.removeItem(key)
       })
-      // let the app window load
-      waitSeconds(2)
-        .then( _ => {
+      function callback(annos, replies) {
+        annos = annos.concat(replies)
+        annos.forEach(anno => {
+          hlib.deleteAnnotation(anno.id, hlib.getToken())
+        })
+        waitSeconds(2)
+        .then( _ =>{
           assertEquals(localStorage['clingen_state'],'needGene')
           resolve()
         })
-      })
-    },
+      }
+      hlib.hApiSearch({url: testUrl}, callback)
+    })
+  },
 
   'geneNameSelectionIsSuccessful': function () {
     return new Promise(resolve => {
@@ -99,14 +107,19 @@ tests({
         .then(_ => {
           waitSeconds(2)
             .then(_ => {
-              assertEquals('haveGene', localStorage['clingen_state'])
-              resolve()
+              function callback(annos) {
+                assertEquals(1, annos.length)
+                assertEquals('["ClinGen","gene:TMEM260"]', JSON.stringify(annos[0].tags))
+                assertEquals('haveGene', localStorage['clingen_state'])
+                resolve()
+              }
+              hlib.hApiSearch({url: testUrl, tags:'gene:TMEM260'}, callback)
             })
         })
     })
   },
 
-  'inMonarchLookup': function () {
+  'monarchLookupIsSuccessful': function () {
     return new Promise(resolve => {
       let params = {
         "uri":"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5384036/",
@@ -125,7 +138,17 @@ tests({
         .then(_ => {
           assertEquals('inMonarchLookup', localStorage['clingen_state'])
           assertEquals('truncus arteriosus', localStorage['clingen_selection'])
-          resolve()
+          gather({invoke:"saveMonarchLookup()"})
+          waitSeconds(2)
+            .then(_ => {
+              function callback(annos) {
+                assertEquals(2, annos.length)
+                assertEquals('["ClinGen","hpoLookup","monarchLookup","gene:TMEM260"]', JSON.stringify(annos[0].tags))
+                assertEquals('haveGene', localStorage['clingen_state'])
+                resolve()
+              }
+              hlib.hApiSearch({url: testUrl, tags:'monarchLookup'}, callback)
+            })
         })
     })
   }
