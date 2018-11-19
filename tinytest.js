@@ -32,15 +32,18 @@ const TinyTest = {
 
     log(testName = 'initialStateIsNeedGene')
     tests[testName]()
-    .then( () => {
+    .then( _ => {
     log(testName = 'geneNameSelectionIsSuccessful')
     tests[testName]()
-    .then( () => {
+    .then( _ => {
     log(testName = 'monarchLookupIsSuccessful')
     tests[testName]()
-    .then( () => {
+    .then( _ => {
+    log(testName = 'variantIdLookupIsSuccessful')
+    tests[testName]()
+    .then( _ => {
     log('done')
-    }) }) }) 
+    }) }) }) })
   },
 
   assert: function(value) {
@@ -135,23 +138,59 @@ tests({
       gather({invoke:"FSM.beginMonarchLookup()"})
       gather({invoke:"app(reloadEvent)"})
       waitSeconds(2)
-        .then(_ => {
-          assertEquals('inMonarchLookup', localStorage['clingen_state'])
-          assertEquals('truncus arteriosus', localStorage['clingen_selection'])
-          gather({invoke:"saveMonarchLookup()"})
-          waitSeconds(2)
-            .then(_ => {
-              function callback(annos) {
-                assertEquals(2, annos.length)
-                assertEquals('["ClinGen","hpoLookup","monarchLookup","gene:TMEM260"]', JSON.stringify(annos[0].tags))
-                assertEquals('haveGene', localStorage['clingen_state'])
-                resolve()
-              }
-              hlib.hApiSearch({url: testUrl, tags:'monarchLookup'}, callback)
-            })
-        })
+      .then(_ => {
+        assertEquals('inMonarchLookup', localStorage['clingen_state'])
+        assertEquals('truncus arteriosus', localStorage['clingen_selection'])
+        gather({invoke:"saveMonarchLookup()"})
+        waitSeconds(2)
+          .then(_ => {
+            function callback(annos) {
+              assertEquals(1, annos.length)
+              assertEquals('["ClinGen","hpoLookup","monarchLookup","gene:TMEM260"]', JSON.stringify(annos[0].tags))
+              assertEquals('haveGene', localStorage['clingen_state'])
+              resolve()
+            }
+            hlib.hApiSearch({url: testUrl, tag:'monarchLookup'}, callback)
+          })
+      })
+  })
+  },
+
+  'variantIdLookupIsSuccessful': function() {
+    return new Promise(resolve => {
+      let params = {
+        "uri":"https://www.ncbi.nlm.nih.gov/clinvar/variation/564085/",
+        "exact":"564085",
+        "prefix":"74-57097693)x1Variation ID: Help",
+        "selection":"564085",
+        "start":7231,
+        "end":7237,
+        "tags":["ClinGen"]
+      }
+      ClinGenWindow.postMessage(params, '*')
+      gather({invoke:"FSM.beginVariantIdLookup()"})
+      gather({invoke:"app(reloadEvent)"})
+      waitSeconds(2)
+      .then(_ => {
+        assertEquals('inVariantIdLookup', localStorage['clingen_state'])
+        assertEquals('564085', localStorage['clingen_selection'])
+        gather({invoke:"saveVariantIdLookup()"})
+        waitSeconds(2)
+          .then(_ => {
+            function callback(annos) {
+              assertEquals(2, annos.length)
+              annos.forEach(anno => {
+                assertEquals('["ClinGen","variantIdLookup","gene:TMEM260"]', JSON.stringify(anno.tags))
+              })
+              assertEquals('haveGene', localStorage['clingen_state'])
+              resolve()
+            }
+            hlib.hApiSearch({url: testUrl, tag:'variantIdLookup'}, callback)
+          })
+      })
+
     })
-  }
+  },
 
   })
   
