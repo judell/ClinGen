@@ -103,5 +103,6 @@ function gather(testArgs) {
   }
 
   ClinGenWindow.postMessage(params, '*') // talk to the app
+  window.getSelection().empty()
 }
 
