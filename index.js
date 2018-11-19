@@ -58,11 +58,10 @@ window.addEventListener('message', function(event) {
 // called with a load event initially, then with message events
 function app(event) {
 
-  console.log(`app event ${JSON.stringify(event,null,2)}`)
+  console.log(`app event type ${event.type}, data ${event.data}`)
 
   if (event.type==='load') {   // advance state machine to cached FSM state
     let savedState = localStorage.getItem(storageKeys.STATE)
-    FSM.init()
     if (savedState === 'haveGene') {
       FSM.getGene()
     } else if (savedState === 'inMonarchLookup') {
@@ -531,36 +530,34 @@ function refreshAnnotationSummary() {
     })
 }
 
-var FSM = function() {
-  
-  let fsm = new StateMachine({
+var FSM
 
-    transitions: [
-      { name: 'init',                   from: 'none',                 to: 'needGene'  },
-      { name: 'getGene',                from: 'needGene',             to: 'haveGene'  },
-      { name: 'beginMonarchLookup',     from: 'haveGene',             to: 'inMonarchLookup' },
-      { name: 'saveMonarchLookup',      from: 'inMonarchLookup',      to: 'haveGene' },
-      { name: 'beginMseqdrLookup',      from: 'haveGene',             to: 'inMseqdrLookup' },
-      { name: 'saveMseqdrLookup',       from: 'inMseqdrLookup',       to: 'haveGene' },
-      { name: 'beginVariantIdLookup',   from: 'haveGene',             to: 'inVariantIdLookup' },
-      { name: 'saveVariantIdLookup',    from: 'inVariantIdLookup',    to: 'haveGene' },
-      { name: 'beginAlleleIdLookup',    from: 'haveGene',             to: 'inAlleleIdLookup' },
-      { name: 'saveAlleleIdLookup',     from: 'inAlleleIdLookup',     to: 'haveGene' },
-    ],
+function createFSM() {
+  FSM = function() {
+    let fsm = new StateMachine({
+      init: 'needGene',
+      transitions: [
+        { name: 'getGene',                from: 'needGene',             to: 'haveGene'  },
+        { name: 'beginMonarchLookup',     from: 'haveGene',             to: 'inMonarchLookup' },
+        { name: 'saveMonarchLookup',      from: 'inMonarchLookup',      to: 'haveGene' },
+        { name: 'beginMseqdrLookup',      from: 'haveGene',             to: 'inMseqdrLookup' },
+        { name: 'saveMseqdrLookup',       from: 'inMseqdrLookup',       to: 'haveGene' },
+        { name: 'beginVariantIdLookup',   from: 'haveGene',             to: 'inVariantIdLookup' },
+        { name: 'saveVariantIdLookup',    from: 'inVariantIdLookup',    to: 'haveGene' },
+        { name: 'beginAlleleIdLookup',    from: 'haveGene',             to: 'inAlleleIdLookup' },
+        { name: 'saveAlleleIdLookup',     from: 'inAlleleIdLookup',     to: 'haveGene' },
+      ],
+      methods: {
+        onEnterState: function(lifecycle) {
+          console.log('entering', lifecycle.to);
+          localStorage.setItem(storageKeys.STATE, lifecycle.to); // remember current state so we can return to it after a page reload
+        },
+      }
+    })
+    return fsm
+  }()
+}
 
-    methods: {
-
-      onEnterState: function(lifecycle) {
-        console.log('entering', lifecycle.to);
-        localStorage.setItem(storageKeys.STATE, lifecycle.to); // remember current state so we can return to it after a page reload
-      },
-
-    }
-  })
-
-  return fsm
-
-}()
-
+createFSM()
 window.onload = app
 
