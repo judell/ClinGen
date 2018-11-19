@@ -28,6 +28,7 @@ function remove() {
     gather = undefined
     ClinGenWindow = undefined
     clearInterval(intervalId)
+    window.getSelection().empty()
   }
 }
 
