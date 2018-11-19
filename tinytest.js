@@ -31,10 +31,10 @@ const TinyTest = {
     log(testName = 'initialStateIsNeedGene')
     tests[testName]()
     .then( () => {
-    log(testName = 'nextStateIsHaveGene')
+    log(testName = 'geneNameSelectionIsSuccessful')
     tests[testName]()
     .then( () => {
-    log(testName = '3')
+    log(testName = 'inMonarchLookup')
     tests[testName]()
     .then( () => {
     log('done')
@@ -88,30 +88,48 @@ tests({
       })
     },
 
-    'nextStateIsHaveGene'  : function () {
-      return new Promise( resolve => {
-        let selection = window.getSelection()
-        window.getSelection().selectAllChildren(hlib.getById('geneName'))
-        waitSeconds(2)
-          .then( _ => {
-            gather({invoke:"getGene()"})
-          })
-          .then( _ => {
-            waitSeconds(2)
-              .then( _ => {
-                assertEquals(localStorage['clingen_state'],'haveGene')
-                resolve()
-              })
-          })
+  'geneNameSelectionIsSuccessful': function () {
+    return new Promise(resolve => {
+      let selection = window.getSelection()
+      window.getSelection().selectAllChildren(hlib.getById('geneName'))
+      waitSeconds(2)
+        .then(_ => {
+          gather({ invoke: "getGene()" })
         })
-      },
-  
-    '3'  : function () {
-      return new Promise( resolve => {
-        resolve()
+        .then(_ => {
+          waitSeconds(2)
+            .then(_ => {
+              assertEquals('haveGene', localStorage['clingen_state'])
+              resolve()
+            })
         })
-      }
-  
-    
+    })
+  },
+
+  'inMonarchLookup': function () {
+    return new Promise(resolve => {
+      let params = {
+        "uri":"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5384036/",
+        "exact":"truncus arteriosus",
+        "prefix":" complex heart defect including ",
+        "selection":"truncus arteriosus",
+        "start":12766,"end":12784,
+        "doi":"10.1016/j.ajhg.2017.02.007",
+        "pmid":"28318500",
+        "tags":["ClinGen","doi:10.1016/j.ajhg.2017.02.007","pmid:28318500"]
+      }      
+      ClinGenWindow.postMessage(params, '*')
+      gather({invoke:"FSM.beginMonarchLookup()"})
+      gather({invoke:"app(reloadEvent)"})
+      waitSeconds(2)
+        .then(_ => {
+          assertEquals('inMonarchLookup', localStorage['clingen_state'])
+          assertEquals('truncus arteriosus', localStorage['clingen_selection'])
+          resolve()
+        })
+    })
+  }
+
   })
+  
       
