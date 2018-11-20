@@ -157,7 +157,8 @@ function app(event) {
     )
   } else if ( FSM.state === 'inVariantIdLookup') {
     appendViewer(`
-    <p>Annotate the current article with "${appVars.SELECTION}" as the ClinVar variant ID for ${appVars.GENE}?
+    <p>Annotate the current article with a page note indicating the ClinVar variant ID (${appVars.SELECTION})?
+    <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
     <p><button onclick="saveVariantIdLookup()">post</button>`
   )
   } else if ( FSM.state === 'inAlleleIdLookup') {
