@@ -26,13 +26,22 @@ function logError(msg) {
   document.getElementById('log').innerHTML += `<div style="background-color:${red}">${msg}</div>`
 }
 
+function clearLocalStorage() {
+  let clinGenKeys = Object.keys(localStorage).filter( key => {
+    return key.startsWith('clingen')
+  })
+  clinGenKeys.forEach( key => {
+    delete localStorage[key]
+  })
+}
+
 const TinyTest = {
 
   run: function(tests) {
+
+    clearLocalStorage()
+
     log(testName = 'articleAnnotationsAreRemoved')
-    tests[testName]()
-    .then( _ => {
-    log(testName = 'localStorageIsInitialized')
     tests[testName]()
     .then( _ => {
     log(testName = 'geneNameSelectionIsSuccessful')
@@ -44,8 +53,8 @@ const TinyTest = {
     log(testName = 'variantIdLookupIsSuccessful')
     tests[testName]()
     .then( _ => {
-    log('done')
-    }) }) }) }) })
+      log('done')
+    }) }) }) })
   },
 
   assert: function(value) {
@@ -88,11 +97,9 @@ tests({
         for ( let i = 0; i < annos.length; i++ ) {
           let anno = annos[i]
           let r = hlib.deleteAnnotation(anno.id, hlib.getToken())
-          r.then(data => {
-            assertEquals(200, data.status)
-          })
+          r.then(data => { assertEquals(200, data.status) })
           if ( i+1 === annos.length) {
-              resolve()
+            resolve()
           }
         }
       }
@@ -100,43 +107,22 @@ tests({
     })
   },
 
-  'localStorageIsInitialized'  : function () {
-    return new Promise( resolve => {
-      let clinGenKeys = Object.keys(localStorage).filter( key => {
-        return key.startsWith('clingen')
-      })
-      clinGenKeys.forEach( key => {
-        localStorage.removeItem(key)
-      })
-      clinGenKeys = Object.keys(localStorage).filter( key => {
-        return key.startsWith('clingen')
-      })
-      assertEquals(0, clinGenKeys.length)
-      resolve()
-    })
-  },
-
   'geneNameSelectionIsSuccessful': function () {
     return new Promise(resolve => {
       let selection = window.getSelection()
       window.getSelection().selectAllChildren(hlib.getById('geneName'))
-      waitSeconds(2)
+      gather({ invoke: "getGene()" })
+      waitSeconds(5)
         .then(_ => {
-          gather({ invoke: "getGene()" })
+          function callback(annos) {
+            assertEquals(1, annos.length)
+            assertEquals('["ClinGen","gene:TMEM260"]', JSON.stringify(annos[0].tags))
+            assertEquals('haveGene', localStorage['clingen_state'])
+            resolve()
+          }
+          hlib.hApiSearch({url: testUrl, tags:'gene:TMEM260'}, callback)
         })
-        .then(_ => {
-          waitSeconds(2)
-            .then(_ => {
-              function callback(annos) {
-                assertEquals(1, annos.length)
-                assertEquals('["ClinGen","gene:TMEM260"]', JSON.stringify(annos[0].tags))
-                assertEquals('haveGene', localStorage['clingen_state'])
-                resolve()
-              }
-              hlib.hApiSearch({url: testUrl, tags:'gene:TMEM260'}, callback)
-            })
-        })
-    })
+      })
   },
 
   'monarchLookupIsSuccessful': function () {
