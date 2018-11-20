@@ -29,7 +29,9 @@ function logError(msg) {
 const TinyTest = {
 
   run: function(tests) {
-
+    log(testName = 'removeArticleAnnotations')
+    tests[testName]()
+    .then( _ => {
     log(testName = 'initialStateIsNeedGene')
     tests[testName]()
     .then( _ => {
@@ -43,7 +45,7 @@ const TinyTest = {
     tests[testName]()
     .then( _ => {
     log('done')
-    }) }) }) })
+    }) }) }) }) })
   },
 
   assert: function(value) {
@@ -75,7 +77,28 @@ setTimeout(function() {
   }
 }, 0)
 
-tests({ 
+tests({
+  'removeArticleAnnotations': function() {
+    return new Promise ( resolve => {
+      function callback(annos) {
+        if ( annos.length === 0 ) {
+          resolve()
+        }
+        for ( let i = 0; i < annos.length; i++ ) {
+          let anno = annos[i]
+          let r = hlib.deleteAnnotation(anno.id, hlib.getToken())
+          r.then(data => {
+            assertEquals(200, data.status)
+          })
+          if ( i+1 === annos.length) {
+              resolve()
+          }
+        }
+      }
+      hlib.hApiSearch({url: testUrl}, callback)
+    })
+  },
+
   'initialStateIsNeedGene'  : function () {
     return new Promise( resolve => {
       let clinGenKeys = Object.keys(localStorage).filter( key => {
@@ -84,18 +107,12 @@ tests({
       clinGenKeys.forEach( key => {
         localStorage.removeItem(key)
       })
-      function callback(annos, replies) {
-        annos = annos.concat(replies)
-        annos.forEach(anno => {
-          hlib.deleteAnnotation(anno.id, hlib.getToken())
-        })
-        waitSeconds(2)
-        .then( _ =>{
-          assertEquals(localStorage['clingen_state'],'needGene')
+      gather({invoke:"createFSM()"})
+      waitSeconds(1)
+        .then( _ => {
+          assertEquals('needGene', localStorage['clingen_state'])
           resolve()
         })
-      }
-      hlib.hApiSearch({url: testUrl}, callback)
     })
   },
 
