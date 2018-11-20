@@ -29,10 +29,10 @@ function logError(msg) {
 const TinyTest = {
 
   run: function(tests) {
-    log(testName = 'removeArticleAnnotations')
+    log(testName = 'articleAnnotationsAreRemoved')
     tests[testName]()
     .then( _ => {
-    log(testName = 'initialStateIsNeedGene')
+    log(testName = 'localStorageIsInitialized')
     tests[testName]()
     .then( _ => {
     log(testName = 'geneNameSelectionIsSuccessful')
@@ -78,7 +78,8 @@ setTimeout(function() {
 }, 0)
 
 tests({
-  'removeArticleAnnotations': function() {
+
+  'articleAnnotationsAreRemoved': function() {
     return new Promise ( resolve => {
       function callback(annos) {
         if ( annos.length === 0 ) {
@@ -99,7 +100,7 @@ tests({
     })
   },
 
-  'initialStateIsNeedGene'  : function () {
+  'localStorageIsInitialized'  : function () {
     return new Promise( resolve => {
       let clinGenKeys = Object.keys(localStorage).filter( key => {
         return key.startsWith('clingen')
@@ -107,12 +108,11 @@ tests({
       clinGenKeys.forEach( key => {
         localStorage.removeItem(key)
       })
-      gather({invoke:"createFSM()"})
-      waitSeconds(1)
-        .then( _ => {
-          assertEquals('needGene', localStorage['clingen_state'])
-          resolve()
-        })
+      clinGenKeys = Object.keys(localStorage).filter( key => {
+        return key.startsWith('clingen')
+      })
+      assertEquals(0, clinGenKeys.length)
+      resolve()
     })
   },
 
@@ -186,7 +186,6 @@ tests({
       }
       ClinGenWindow.postMessage(params, '*')
       gather({invoke:"FSM.beginVariantIdLookup()"})
-      gather({invoke:"app(reloadEvent)"})
       waitSeconds(2)
       .then(_ => {
         assertEquals('inVariantIdLookup', localStorage['clingen_state'])
