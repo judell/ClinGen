@@ -550,7 +550,9 @@ function createFSM() {
       methods: {
         onEnterState: function(lifecycle) {
           console.log('entering', lifecycle.to);
-          localStorage.setItem(storageKeys.STATE, lifecycle.to); // remember current state so we can return to it after a page reload
+          if (lifecycle.to !== 'needGene') {
+            localStorage.setItem(storageKeys.STATE, lifecycle.to);
+          }
         },
       }
     })
