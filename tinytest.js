@@ -175,16 +175,9 @@ tests({
 
   'variantIdLookupIsSuccessful': function() {
     return new Promise(resolve => {
-      let params = {
-        "uri":"https://www.ncbi.nlm.nih.gov/clinvar/variation/564085/",
-        "exact":"564085",
-        "prefix":"74-57097693)x1Variation ID: Help",
-        "selection":"564085",
-        "start":7231,
-        "end":7237,
-        "tags":["ClinGen"]
-      }
-      ClinGenWindow.postMessage(params, '*')
+      let selection = window.getSelection()
+      window.getSelection().selectAllChildren(hlib.getById('variantId'))
+      gather()
       gather({invoke:"FSM.beginVariantIdLookup()"})
       waitSeconds(2)
       .then(_ => {
