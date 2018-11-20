@@ -3,25 +3,18 @@
 <title>ClinGen test harness</title>  
 <script src="https://jonudell.info/hlib/hlib.bundle.js"></script>
 <script src="https://jonudell.info/hlib/StandaloneAnchoring.js"></script>
+<link rel="stylesheet" href="https://jonudell.info/hlib/hlib.css">
 <style>
 body {
   margin: .5in;
 }  
-#log {
-  margin-top:40px;
-}  
+
 </style>  
 </head>
 
 <body>
 
-<!--
-truncus arteriosus
-    Monarch lookup result: https://monarchinitiative.org/phenotype/HP:0001660
-    ClinGen hpoLookup monarchLookup gene:TMEM260
--->    
-
-<p>This section represents the article page</p>
+<h1>This section represents the article page</h1>
 <p>Mutations in <span id="geneName">TMEM260</span> Cause a Pediatric Neurodevelopmental, Cardiac, and Renal Syndrome</p>
 <p>
 We consulted family 1, a consanguineous Ashkenazi Jewish pedigree, who had experienced three 
@@ -34,9 +27,13 @@ a ventricular septal defect (VSD), an interrupted aortic arch, and a partial ano
 pulmonary venous return. 
 </p>
 
-<p>This section represents the variant lookup page</p>
+<h1>This section represents the variant lookup page</h1>
 <p>Variation ID: <span id="variantId">564085</span></p>
 
+<h1>This section represents the allele id lookup page</h1>
+<p>Canonical Allele Identifier: <span id="alleleId">CA7200051</span></p>
+
+<h1>Log messages</h1>
 <div id="log"></div>
 
 <script src="gather.js"></script>

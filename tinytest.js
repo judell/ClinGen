@@ -52,9 +52,12 @@ const TinyTest = {
     .then( _ => {
     log(testName = 'variantIdLookupIsSuccessful')
     tests[testName]()
+    .then( _=> {
+    log(testName = 'alleleIdLookupIsSuccessful')
+    tests[testName]()
     .then( _ => {
       log('done')
-    }) }) }) })
+    }) }) }) }) })
   },
 
   assert: function(value) {
@@ -110,7 +113,9 @@ tests({
   'geneNameSelectionIsSuccessful': function () {
     return new Promise(resolve => {
       let selection = window.getSelection()
-      window.getSelection().selectAllChildren(hlib.getById('geneName'))
+      let geneName = hlib.getById('geneName')
+      geneName.style.color = 'red'
+      selection.selectAllChildren(geneName)
       gather({ invoke: "getGene()" })
       waitSeconds(5)
         .then(_ => {
@@ -127,19 +132,11 @@ tests({
 
   'monarchLookupIsSuccessful': function () {
     return new Promise(resolve => {
-      let params = {
-        "uri":"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5384036/",
-        "exact":"truncus arteriosus",
-        "prefix":" complex heart defect including ",
-        "selection":"truncus arteriosus",
-        "start":12766,"end":12784,
-        "doi":"10.1016/j.ajhg.2017.02.007",
-        "pmid":"28318500",
-        "tags":["ClinGen","doi:10.1016/j.ajhg.2017.02.007","pmid:28318500"]
-      }      
-      ClinGenWindow.postMessage(params, '*')
+      let selection = window.getSelection()
+      let hpoLookupTerm = hlib.getById('hpoLookupTerm')
+      hpoLookupTerm.style.color = 'red'
+      selection.selectAllChildren(hpoLookupTerm)
       gather({invoke:"FSM.beginMonarchLookup()"})
-      gather({invoke:"app(reloadEvent)"})
       waitSeconds(2)
       .then(_ => {
         assertEquals('inMonarchLookup', localStorage['clingen_state'])
@@ -162,8 +159,9 @@ tests({
   'variantIdLookupIsSuccessful': function() {
     return new Promise(resolve => {
       let selection = window.getSelection()
-      window.getSelection().selectAllChildren(hlib.getById('variantId'))
-      gather()
+      let variantId = hlib.getById('variantId')
+      variantId.style.color = 'red'
+      selection.selectAllChildren(variantId)
       gather({invoke:"FSM.beginVariantIdLookup()"})
       waitSeconds(2)
       .then(_ => {
@@ -186,6 +184,35 @@ tests({
 
     })
   },
+
+  'alleleIdLookupIsSuccessful': function() {
+    return new Promise(resolve => {
+      let selection = window.getSelection()
+      let alleleId = hlib.getById('alleleId')
+      alleleId.style.color = 'red'
+      selection.selectAllChildren(alleleId)
+      gather({invoke:"FSM.beginAlleleIdLookup()"})
+      waitSeconds(2)
+      .then(_ => {
+        assertEquals('inAlleleIdLookup', localStorage['clingen_state'])
+        assertEquals('CA7200051', localStorage['clingen_selection'])
+        gather({invoke:"saveAlleleIdLookup()"})
+        waitSeconds(2)
+          .then(_ => {
+            function callback(annos) {
+              assertEquals(2, annos.length)
+              annos.forEach(anno => {
+                assertEquals('["ClinGen","alleleIdLookup","gene:TMEM260"]', JSON.stringify(anno.tags))
+              })
+              assertEquals('haveGene', localStorage['clingen_state'])
+              resolve()
+            }
+            hlib.hApiSearch({url: testUrl, tag:'alleleIdLookup'}, callback)
+          })
+      })
+
+    })
+  },  
 
   })
   
