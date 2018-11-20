@@ -174,8 +174,6 @@ function app(event) {
 // workflow functions
 
 function getGene() {
-  hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
-  hlib.createUserInputForm(hlib.getById('userContainer'))
   let params = getApiBaseParams()
   params.tags.push('gene:' + appVars.SELECTION)
   params.tags = params.tags.concat(getPmidAndDoi())
@@ -496,16 +494,14 @@ function refreshSvg() {
         // Add links for clickable transitions.
         // This is another section that can need attention when the state diagram changes, 
         // and might benefit from a generator.
-        if ( (t.innerHTML==='haveGene') && (FSM.state==='needGene') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.getGene();javascript:app(reloadEvent)">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+        if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup()">${t.innerHTML}</a>`
         } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMseqdrLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup()">${t.innerHTML}</a>`
         } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inVariantIdLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveVariantIdLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveVariantIdLookup()">${t.innerHTML}</a>`
         } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inAlleleIdLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup();javascript:app(reloadEvent)">${t.innerHTML}</a>`
+          t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup()">${t.innerHTML}</a>`
       }
     })
   })
@@ -553,6 +549,7 @@ function createFSM() {
           console.log('entering', lifecycle.to);
           if (lifecycle.to !== 'needGene') {
             localStorage.setItem(storageKeys.STATE, lifecycle.to);
+            app(reloadEvent)
           }
         },
       }
@@ -562,5 +559,7 @@ function createFSM() {
 }
 
 createFSM()
+hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
+hlib.createUserInputForm(hlib.getById('userContainer'))
 window.onload = app
 
