@@ -13,6 +13,10 @@ const storageKeys = {
   START: `${appWindowName}_start`,
   END: `${appWindowName}_end`,
   PMID: `${appWindowName}_pmid`,
+  DOI: `${appWindowName}_doi`,
+  GROUP_PHENOTYPE: `${appWindowName}_group_phenotype`,
+  FAMILY_PHENOTYPE: `${appWindowName}_family_phenotype`,
+  INDIVIDUAL_PHENOTYPE: `${appWindowName}_individual_phenotype`,
 }
 
 // loaded from localStorage when the app loads, updated when messages arrive
@@ -40,7 +44,11 @@ var eventData = {}
 
 
 // just public for now, can swap in the group picker as/when needed
-const clingenGroup = '__world__'
+const hypothesisGroup = '__world__'
+
+function answer(e) {
+  localStorage[`${appWindowName}_${e.name}`] = e.checked
+}
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
@@ -116,11 +124,15 @@ function app(event) {
   // state-dependent messages to user
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
-      <p>To begin a gene curation:
-      <ul>
-      <li>Go to an article to which you've added the ClinGen button.
-      <li>Select the name of a gene.
-      <li>Click the ClinGen button.
+      <p>Let's get started. First, please tick the relevant boxes.
+      <p>
+      <div><input type="checkbox" onchange="answer(this)" name="groupPhenotype"</div> Will you have group phenotype info?
+      <div><input type="checkbox" onchange="answer(this)" name="familyPhenotype"</div> Will you have family phenotype info?
+      <div><input type="checkbox" onchange="answer(this)" name="individualPhenotype"</div> Will you have individual phenotype info?
+      </p>
+
+      <p>Then, to begin a curation, go to an article, click the ${appWindowName} bookmarklet,
+      select the name of a gene, and click the ${appWindowName} button.
       </ul>`
     )
   } else if ( FSM.state === 'needGene' && appVars.SELECTION) {
@@ -292,7 +304,7 @@ function saveApiParams(params) {
 // get base params for an annotation with selectors
 function getApiBaseParams() {
   return {
-    group: clingenGroup,
+    group: hypothesisGroup,
     username: hlib.getUser(),
     uri: appVars.URL,
     exact: appVars.SELECTION,
@@ -306,7 +318,7 @@ function getApiBaseParams() {
 // get base params for an annotation with no selectors
 function getApiBaseParamsMinusSelectors() {
   return {
-    group: clingenGroup,
+    group: hypothesisGroup,
     username: hlib.getUser(),
     uri: appVars.URL,
     tags: [appWindowName],
