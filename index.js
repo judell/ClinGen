@@ -363,43 +363,15 @@ function savePmidFromInput() {
 }
 
 // post an annotation, then trigger a state transition
-/*
-Note: Would rather just pass the FSM method here, not a stringified name,
-but when trying to call it in the then clause, this happens:
-
-TypeError: Cannot read property '_fsm' of undefined
-    at target.(anonymous function) (https://jonudell.info/hlib/state-machine.js:624:19)
-    at transit (index.js:405)
-    at hlib.postAnnotation.then.data (index.js:429)
-
-The abstraction is somewhat leaky.
-
-Eval might work, but better not to go there.
-
-Unfortunately that makes this one of several places in the code that need 
-updating when the workflow changes. I'm looking for ways to consolidate the
-duplication because it makes writing a workflow app harder than it needs to be.
-
-If this whole approach pans out, it might be worth making a generator for the
-`transit` method.
-*/
 function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
-    if (transition==='getGene') {
-      FSM.getGene()
+    if (transition === 'getGene') {
       saveAppVar(storageKeys.ARTICLE,appVars.URL)
       saveAppVar(storageKeys.GENE, appVars.SELECTION)
       loadAppVars()
-    } else if (transition==='saveMonarchLookup') {
-      FSM.saveMonarchLookup()
-    } else if (transition==='saveMseqdrLookup') {
-      FSM.saveMseqdrLookup()
-    } else if (transition==='saveVariantIdLookup') {
-      FSM.saveVariantIdLookup()
-    } else if (transition==='saveAlleleIdLookup') {
-      FSM.saveAlleleIdLookup()
     }
+    eval(`FSM.${transition}()`)
     refreshUI()
   }
 
