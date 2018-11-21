@@ -183,23 +183,11 @@ function getGene() {
   postAnnotationAndUpdateState(payload, token, 'getGene')
 }
 
-// Runs from a link created in the haveGene state.
 function monarchLookup() {
   FSM.beginMonarchLookup()
   let url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
   window.open(url, appWindowName)
   window.close()
-}
-
-// Runs from a link created in the inMonarchLookup state
-function saveMonarchLookup() {
-  let params = getApiBaseParams()
-  params.text = `Monarch lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
-  params.uri = appVars.ARTICLE // because the annotation target is the article, /not/ the lookup result page
-  params.tags = params.tags.concat(['hpoLookup', 'monarchLookup', `gene:${appVars.GENE}`])
-  const payload = hlib.createAnnotationPayload(params)
-  const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'saveMonarchLookup')
 }
 
 function mseqdrLookup() {
@@ -209,14 +197,22 @@ function mseqdrLookup() {
   window.close()
 }
 
-function saveMseqdrLookup() {
+function saveLookupAsPageNote(text, tags, transition) {
   let params = getApiBaseParams()
-  params.text = `Mseqdr lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
+  params.text = `${text}: <a href="${appVars.URL}">${appVars.URL}</a>`
   params.uri = appVars.ARTICLE 
-  params.tags = params.tags.concat(['hpoLookup', 'mseqdrLookup', `gene:${appVars.GENE}`])
+  params.tags = params.tags.concat(tags, `gene:${appVars.GENE}`)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, 'saveMseqdrLookup')
+  postAnnotationAndUpdateState(payload, token, transition)
+}
+
+function saveMonarchLookup() {
+  saveLookupAsPageNote('Monarch lookup result', ['hpoLookup', 'monarchLookup'], 'saveMonarchLookup')
+}
+
+function saveMseqdrLookup() {
+  saveLookupAsPageNote('Mseqdr lookup result', ['hpoLookup', 'mseqdrLookup'], 'saveMseqdrLookup')
 }
 
 function variantIdLookup() {
