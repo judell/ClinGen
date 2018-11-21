@@ -1,6 +1,10 @@
 // runs from a bookmarklet, injects a relay into a host page, sends messages to the app
 
-const appWindowName = 'ClinGen'
+var appWindowName 
+
+if (! appWindowName) {
+  appWindowName = 'ClinGen'
+}
 
 var appWindow
 
