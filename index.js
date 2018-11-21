@@ -256,8 +256,6 @@ function saveAlleleIdLookup() {
   saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
 }
 
-// utility functions
-
 function getPmidAndDoi() {
   var tags = []
   let pmid = eventData.pmid
@@ -271,7 +269,7 @@ function getPmidAndDoi() {
   return tags
 }
 
-// save params used by h api calls to localStorage
+// save params used by h api calls
 function saveApiParams(params) {
   if (params.uri) {
     saveAppVar(storageKeys.URL, params.uri)
