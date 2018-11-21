@@ -1,16 +1,18 @@
 // runs in a window opened by the bookmarklet, receives messages from the host
 
+const appWindowName = 'ClinGen'
+
 // localStorage keys used to remember FSM state and related app state
 const storageKeys = {
-  STATE: 'clingen_state',
-  GENE: 'clingen_gene',
-  ARTICLE: 'clingen_article',
-  URL: 'clingen_url',
-  SELECTION: 'clingen_selection',
-  PREFIX: 'clingen_prefix',
-  START: 'clingen_start',
-  END: 'clingen_end',
-  PMID: 'clingen_pmid',
+  STATE: `${appWindowName}_state`,
+  GENE: `${appWindowName}_gene`,
+  ARTICLE: `${appWindowName}_article`,
+  URL: `${appWindowName}_url`,
+  SELECTION: `${appWindowName}_selection`,
+  PREFIX: `${appWindowName}_prefix`,
+  START: `${appWindowName}_start`,
+  END: `${appWindowName}_end`,
+  PMID: `${appWindowName}_pmid`,
 }
 
 // loaded from localStorage when the app loads, updated when messages arrive
@@ -36,7 +38,6 @@ const reloadEvent = {
 // for message-delivered data other than appVars (e.g. pmid, doi)
 var eventData = {}
 
-const appWindowName = 'ClinGen'
 
 // just public for now, can swap in the group picker as/when needed
 const clingenGroup = '__world__'
@@ -49,7 +50,7 @@ window.addEventListener('message', function(event) {
     app(clearSelectionEvent)
   } else if ( event.data === 'CloseClinGen' ) {
     window.close()
-  } else if (event.data.tags && event.data.tags.indexOf('ClinGen') != -1) {
+  } else if (event.data.tags && event.data.tags.indexOf(appWindowName) != -1) {
     eventData = event.data // remember, e.g., the pmid and doi found in the base article
     app(event)
   } 
@@ -298,7 +299,7 @@ function getApiBaseParams() {
     prefix: appVars.PREFIX,
     start: appVars.START,
     end: appVars.END,
-    tags: ['ClinGen'],
+    tags: [appWindowName],
   }
 }
 
@@ -308,7 +309,7 @@ function getApiBaseParamsMinusSelectors() {
     group: clingenGroup,
     username: hlib.getUser(),
     uri: appVars.URL,
-    tags: ['ClinGen'],
+    tags: [appWindowName],
   }
 }
 
@@ -388,8 +389,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
 
       writeViewer(`<p>Annotation posted.
        <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
-       <p>You can click the ClinGen button to proceed. 
-       <p>Or you can close this window to suspend the workflow, and relaunch ClinGen when ready to proceed.`
+       <p>You can click the ${appWindowName} button to proceed. 
+       <p>Or you can close this window to suspend the workflow, and relaunch ${appWindowName} when ready to proceed.`
       )
 
       refreshSvg()

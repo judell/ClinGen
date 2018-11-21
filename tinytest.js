@@ -27,10 +27,10 @@ function logError(msg) {
 }
 
 function clearLocalStorage() {
-  let clinGenKeys = Object.keys(localStorage).filter( key => {
-    return key.startsWith('clingen')
+  let keys = Object.keys(localStorage).filter( key => {
+    return key.startsWith(appWindowName)
   })
-  clinGenKeys.forEach( key => {
+  keys.forEach( key => {
     delete localStorage[key]
   })
 }
@@ -121,8 +121,8 @@ tests({
         .then(_ => {
           function callback(annos) {
             assertEquals(1, annos.length)
-            assertEquals('["ClinGen","gene:TMEM260"]', JSON.stringify(annos[0].tags))
-            assertEquals('haveGene', localStorage['clingen_state'])
+            assertEquals(`["${appWindowName}","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
+            assertEquals('haveGene', localStorage[`${appWindowName}_state`])
             resolve()
           }
           hlib.hApiSearch({url: testUrl, tags:'gene:TMEM260'}, callback)
@@ -139,15 +139,15 @@ tests({
       gather({invoke:"FSM.beginMonarchLookup()"})
       waitSeconds(2)
       .then(_ => {
-        assertEquals('inMonarchLookup', localStorage['clingen_state'])
-        assertEquals('truncus arteriosus', localStorage['clingen_selection'])
+        assertEquals('inMonarchLookup', localStorage[`${appWindowName}_state`])
+        assertEquals('truncus arteriosus', localStorage[`${appWindowName}_selection`])
         gather({invoke:"saveMonarchLookup()"})
         waitSeconds(2)
           .then(_ => {
             function callback(annos) {
               assertEquals(1, annos.length)
-              assertEquals('["ClinGen","hpoLookup","monarchLookup","gene:TMEM260"]', JSON.stringify(annos[0].tags))
-              assertEquals('haveGene', localStorage['clingen_state'])
+              assertEquals(`["${appWindowName}","hpoLookup","monarchLookup","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
+              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
             }
             hlib.hApiSearch({url: testUrl, tag:'monarchLookup'}, callback)
@@ -165,17 +165,17 @@ tests({
       gather({invoke:"FSM.beginVariantIdLookup()"})
       waitSeconds(2)
       .then(_ => {
-        assertEquals('inVariantIdLookup', localStorage['clingen_state'])
-        assertEquals('564085', localStorage['clingen_selection'])
+        assertEquals('inVariantIdLookup', localStorage[`${appWindowName}_state`])
+        assertEquals('564085', localStorage[`${appWindowName}_selection`])
         gather({invoke:"saveVariantIdLookup()"})
         waitSeconds(2)
           .then(_ => {
             function callback(annos) {
               assertEquals(2, annos.length)
               annos.forEach(anno => {
-                assertEquals('["ClinGen","variantIdLookup","gene:TMEM260"]', JSON.stringify(anno.tags))
+                assertEquals(`["${appWindowName}","variantIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
               })
-              assertEquals('haveGene', localStorage['clingen_state'])
+              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
             }
             hlib.hApiSearch({url: testUrl, tag:'variantIdLookup'}, callback)
@@ -194,17 +194,17 @@ tests({
       gather({invoke:"FSM.beginAlleleIdLookup()"})
       waitSeconds(2)
       .then(_ => {
-        assertEquals('inAlleleIdLookup', localStorage['clingen_state'])
-        assertEquals('CA7200051', localStorage['clingen_selection'])
+        assertEquals('inAlleleIdLookup', localStorage[`${appWindowName}_state`])
+        assertEquals('CA7200051', localStorage[`${appWindowName}_selection`])
         gather({invoke:"saveAlleleIdLookup()"})
         waitSeconds(2)
           .then(_ => {
             function callback(annos) {
               assertEquals(2, annos.length)
               annos.forEach(anno => {
-                assertEquals('["ClinGen","alleleIdLookup","gene:TMEM260"]', JSON.stringify(anno.tags))
+                assertEquals(`["${appWindowName}","alleleIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
               })
-              assertEquals('haveGene', localStorage['clingen_state'])
+              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
             }
             hlib.hApiSearch({url: testUrl, tag:'alleleIdLookup'}, callback)

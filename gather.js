@@ -1,6 +1,8 @@
 // runs from a bookmarklet, injects a relay into a host page, sends messages to the app
 
-var ClinGenWindow;
+const appWindowName = 'ClinGen'
+
+var appWindow
 
 // when there's a selection, move the activator button to it
 document.addEventListener('mouseup', e => {
@@ -11,22 +13,22 @@ document.addEventListener('mouseup', e => {
   } else {
     activator.style.left = 0
     activator.style.top = 0
-    ClinGenWindow.postMessage('clearSelection', '*')
+    appWindow.postMessage('clearSelection', '*')
   }
 
 })
 
-if ( typeof ClinGenWindow === 'object' ) {
-  alert('The ClinGen app is open in another window. Please use the ClinGen button in this window to continue the workflow.');
+if ( typeof appWindow === 'object' ) {
+  alert(`The ${appWindowName} app is open in another window. Please use the ${appWindowName} button in this window to continue the workflow.`);
 } else {
   gather()
 }
 
 function remove() {
-  if (ClinGenWindow && ClinGenWindow.closed) {
+  if (appWindow && appWindow.closed) {
     document.getElementById('activator').remove()
     gather = undefined
-    ClinGenWindow = undefined
+    appWindow = undefined
     clearInterval(intervalId)
     window.getSelection().empty()
   }
@@ -36,7 +38,7 @@ function remove() {
 var intervalId = setInterval(remove, 1000)
 
 window.onunload = function() {
-  ClinGenWindow.postMessage('CloseClinGen', '*')
+  appWindow.postMessage(`Close{$appWindowName}`, '*')
 }
 
 function gather(testArgs) {
@@ -72,7 +74,7 @@ function gather(testArgs) {
   params.pmid = (metaPmid && metaPmid.content) ? metaPmid.content : undefined
 
   // common tag for all ClinGen-related annotations
-  params.tags = ['ClinGen']
+  params.tags = [appWindowName]
 
   // gather metadata if available
   if ( params.doi ) { params.tags.push('doi:' + params.doi) }
@@ -84,25 +86,25 @@ function gather(testArgs) {
   //   always: uri of page on which the bookmarklet was activated
   //   maybe: selectors for a selection on the page
   //   maybe: page metadata (doi, pmid, ...?)
-  if (!ClinGenWindow) {   // open the app
+  if (!appWindow) {   // open the app
     let activator = document.createElement('div')
     activator.id = 'activator'
     activator.style['position'] = 'absolute'
     activator.style['z-index'] = 999999999
     activator.style['top'] = 0
     activator.style['left'] = 0
-    activator.innerHTML = '<button title="Activate ClinGen workflow" onclick="gather()">ClinGen</button>'
+    activator.innerHTML = `<button title="Activate ${appWindowName} workflow" onclick="gather()">${appWindowName}</button>`
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = "width=700, height=900, toolbar=yes, top=-1000"
-    //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, '_clingen', opener)
-    ClinGenWindow = window.open( `http://10.0.0.9:8000/index.html`, '_clingen', opener)
+    //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
+    appWindow = window.open( `http://10.0.0.9:8000/index.html`, appWindowName, opener)
   } 
 
   if (testArgs) {
     params = Object.assign(testArgs, params)
   }
 
-  ClinGenWindow.postMessage(params, '*') // talk to the app
+  appWindow.postMessage(params, '*') // talk to the app
   window.getSelection().empty()
 }
 
