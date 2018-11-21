@@ -226,26 +226,6 @@ function variantIdLookup() {
   window.close()
 }
 
-function saveVariantIdLookup() {
-  var params = getApiBaseParams() // save an anchored annotation to the lookup page
-  const text = `ClinVar variant ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
-  const tags = params.tags.concat(['variantIdLookup', `gene:${appVars.GENE}`])
-  params.text = text
-  params.tags = tags
-  const token = hlib.getToken()
-  let payload = hlib.createAnnotationPayload(params)
-  hlib.postAnnotation(payload, token)
-    .then( data => {
-      console.log('saveVariantId to lookup page', JSON.parse(data.response))
-      params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
-      params.text = text
-      params.tags = tags
-      params.uri = appVars.ARTICLE
-      payload = hlib.createAnnotationPayload(params)
-      postAnnotationAndUpdateState(payload, token, 'saveVariantIdLookup')
-    })
-}
-
 function alleleIdLookup() {
   FSM.beginAlleleIdLookup()
   let url = `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/alleles?externalSource=pubmed&p1=${appVars.PMID}`
@@ -253,25 +233,32 @@ function alleleIdLookup() {
   window.close()
 }
 
-function saveAlleleIdLookup() {
+function saveLookup(text, tag, transition ) {
   var params = getApiBaseParams() // save an anchored annotation to the lookup page
-  const text = `ClinGen allele ID lookup result: <a href="${appVars.URL}">${appVars.URL}</a>`
-  const tags = params.tags.concat(['alleleIdLookup', `gene:${appVars.GENE}`])
+  text = `${text} <a href="${appVars.URL}">${appVars.URL}</a>`
+  const tags = params.tags.concat([`${tag}`, `gene:${appVars.GENE}`])
   params.text = text
   params.tags = tags
   const token = hlib.getToken()
   let payload = hlib.createAnnotationPayload(params)
   hlib.postAnnotation(payload, token)
     .then( data => {
-      console.log('saveAlleleId to lookup page', JSON.parse(data.response))
       params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
       params.text = text
       params.tags = tags
       params.uri = appVars.ARTICLE
       payload = hlib.createAnnotationPayload(params)
-      postAnnotationAndUpdateState(payload, token, 'saveAlleleIdLookup')
+      postAnnotationAndUpdateState(payload, token, transition)
     })
-}  
+  }
+
+function saveVariantIdLookup() {
+  saveLookup('ClinVar variant ID lookup result', 'variantIdLookup', 'saveVariantIdLookup')
+}
+
+function saveAlleleIdLookup() {
+  saveLookup('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
+}
 
 // utility functions
 
