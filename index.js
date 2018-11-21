@@ -45,7 +45,7 @@ const clingenGroup = '__world__'
 window.addEventListener('message', function(event) {
   console.log(`listener event ${JSON.stringify(event)}`)
   if ( event.data === 'clearSelection' ) {
-    saveSelection('')
+    saveAppVar(storageKeys.SELECTION, '')
     app(clearSelectionEvent)
   } else if ( event.data === 'CloseClinGen' ) {
     window.close()
@@ -274,19 +274,19 @@ function getPmidAndDoi() {
 // save params used by h api calls to localStorage
 function saveApiParams(params) {
   if (params.uri) {
-    saveUrl(params.uri)
+    saveAppVar(storageKeys.URL, params.uri)
   }
   if (params.exact) {
-    saveSelection(params.exact.trim())
+    saveAppVar(storageKeys.SELECTION, params.exact.trim())
   }
   if (params.prefix) {
-    savePrefix(params.prefix)
+    saveAppVar(storageKeys.PREFIX, params.prefix)
   }
   if (params.start) {
-    saveStart(params.start)
+    saveAppVar(storageKeys.START, params.start)
   }
   if (params.end) {
-    saveEnd(params.end)
+    saveAppVar(storageKeys.END, params.end)
   }
 }
 
@@ -350,36 +350,12 @@ function clearUI() {
 
 // save appVars to localStorage
 
-function saveArticle(article) {
-  localStorage.setItem(storageKeys.ARTICLE, article)
-}
-
-function saveGene(gene) {
-  localStorage.setItem(storageKeys.GENE, gene)
-}
-
-function saveUrl(url) {
-  localStorage.setItem(storageKeys.URL, url)
-}
-
-function saveSelection(selection) {
-  localStorage.setItem(storageKeys.SELECTION, selection)
-}
-
-function savePrefix(prefix) {
-  localStorage.setItem(storageKeys.PREFIX, prefix)
-}
-
-function saveStart(start) {
-  localStorage.setItem(storageKeys.START, start)
-}
-
-function saveEnd(end) {
-  localStorage.setItem(storageKeys.END, end)
+function saveAppVar(key, value) {
+  localStorage.setItem(key, value)
 }
 
 function savePmid(pmid) {
-  localStorage.setItem(storageKeys.PMID, pmid)
+  saveAppVar(storageKeys.PMID, pmid)
 }
 
 function savePmidFromInput() {
@@ -412,8 +388,8 @@ function postAnnotationAndUpdateState(payload, token, transition) {
   function transit(transition) {
     if (transition==='getGene') {
       FSM.getGene()
-      saveArticle(appVars.URL)
-      saveGene(appVars.SELECTION)
+      saveAppVar(storageKeys.ARTICLE,appVars.URL)
+      saveAppVar(storageKeys.GENE, appVars.SELECTION)
       loadAppVars()
     } else if (transition==='saveMonarchLookup') {
       FSM.saveMonarchLookup()
