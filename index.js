@@ -233,7 +233,7 @@ function alleleIdLookup() {
   window.close()
 }
 
-function saveLookup(text, tag, transition ) {
+function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
   var params = getApiBaseParams() // save an anchored annotation to the lookup page
   text = `${text} <a href="${appVars.URL}">${appVars.URL}</a>`
   const tags = params.tags.concat([`${tag}`, `gene:${appVars.GENE}`])
@@ -253,11 +253,11 @@ function saveLookup(text, tag, transition ) {
   }
 
 function saveVariantIdLookup() {
-  saveLookup('ClinVar variant ID lookup result', 'variantIdLookup', 'saveVariantIdLookup')
+  saveLookupAsPageNoteAndAnnotation('ClinVar variant ID lookup result', 'variantIdLookup', 'saveVariantIdLookup')
 }
 
 function saveAlleleIdLookup() {
-  saveLookup('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
+  saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
 }
 
 // utility functions
