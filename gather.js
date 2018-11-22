@@ -45,6 +45,11 @@ window.onunload = function() {
   appWindow.postMessage(`Close{$appWindowName}`, '*')
 }
 
+function hgvs() {
+  let selection = window.getSelection().toString()
+  window.open( `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/allele?hgvs=${selection}`, 'hgvs')
+}
+
 function gather(testArgs) {
 
   // always pass the url at which the bookmarklet activated
@@ -97,11 +102,13 @@ function gather(testArgs) {
     activator.style['z-index'] = 999999999
     activator.style['top'] = 0
     activator.style['left'] = 0
-    activator.innerHTML = `<button title="Activate ${appWindowName} workflow" onclick="gather()">${appWindowName}</button>`
+    activator.innerHTML = `
+    <button title="Invoke ${appWindowName}" onclick="gather()">${appWindowName}</button>
+    <button title="Do HGVS lookup" onclick="hgvs()">HGVS</button>`
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = "width=700, height=900, toolbar=yes, top=-1000"
-    //appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
-    appWindow = window.open( `http://10.0.0.9:8000/index.html`, appWindowName, opener)
+    appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
+    //appWindow = window.open( `http://10.0.0.9:8000/index.html`, appWindowName, opener)
   } 
 
   if (testArgs) {
