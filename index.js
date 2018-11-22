@@ -56,7 +56,7 @@ window.addEventListener('message', function(event) {
   if ( event.data === 'clearSelection' ) {
     saveAppVar(storageKeys.SELECTION, '')
     app(clearSelectionEvent)
-  } else if ( event.data === 'CloseClinGen' ) {
+  } else if ( event.data === `Close${appWindowName}` ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf(appWindowName) != -1) {
     eventData = event.data // remember, e.g., the pmid and doi found in the base article
@@ -144,7 +144,7 @@ function app(event) {
     appendViewer(`
       ${lookupBoilerplate}
       <p>Nothing is selected in the current article. 
-      <p>To proceed with HPO lookups, select a term in the article, then click the ClinGen button to save the selection and continue.
+      <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} ClinGen button to save the selection and continue.
       <p>Variant ID lookups and allele lookups don't depend on a selection in the article, so you can proceed directly with those.
       ${variantLookupBoilerplate}`
     )

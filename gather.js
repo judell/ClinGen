@@ -100,7 +100,7 @@ function gather(testArgs) {
     activator.innerHTML = `<button title="Activate ${appWindowName} workflow" onclick="gather()">${appWindowName}</button>`
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = "width=700, height=900, toolbar=yes, top=-1000"
-    //ClinGenWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
+    //appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
     appWindow = window.open( `http://10.0.0.9:8000/index.html`, appWindowName, opener)
   } 
 
