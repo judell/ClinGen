@@ -94,6 +94,10 @@ tests({
   'articleAnnotationsAreRemoved': function() {
     return new Promise ( resolve => {
       function callback(annos) {
+      }
+      hlib.search({url: testUrl})
+      .then( data => {
+        let annos = data[0]
         if ( annos.length === 0 ) {
           resolve()
         }
@@ -105,8 +109,7 @@ tests({
             resolve()
           }
         }
-      }
-      hlib.hApiSearch({url: testUrl}, callback)
+      })
     })
   },
 
@@ -119,13 +122,14 @@ tests({
       gather({ invoke: "getGene()" })
       waitSeconds(5)
         .then(_ => {
-          function callback(annos) {
+          hlib.search({url: testUrl, tags:'gene:TMEM260'})
+          .then (data => {
+            let annos = data[0]
             assertEquals(1, annos.length)
             assertEquals(`["${appWindowName}","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
             assertEquals('haveGene', localStorage[`${appWindowName}_state`])
             resolve()
-          }
-          hlib.hApiSearch({url: testUrl, tags:'gene:TMEM260'}, callback)
+          })
         })
       })
   },
@@ -144,13 +148,14 @@ tests({
         gather({invoke:"saveMonarchLookup()"})
         waitSeconds(2)
           .then(_ => {
-            function callback(annos) {
+            hlib.search({url: testUrl, tag:'monarchLookup'})
+            .then ( data => {
+              let annos = data[0]
               assertEquals(1, annos.length)
               assertEquals(`["${appWindowName}","hpoLookup","monarchLookup","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
               assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
-            }
-            hlib.hApiSearch({url: testUrl, tag:'monarchLookup'}, callback)
+            })
           })
       })
   })
@@ -170,15 +175,16 @@ tests({
         gather({invoke:"saveVariantIdLookup()"})
         waitSeconds(2)
           .then(_ => {
-            function callback(annos) {
+            hlib.search({url: testUrl, tag:'variantIdLookup'})
+            .then ( data => {
+              let annos = data[0]
               assertEquals(2, annos.length)
               annos.forEach(anno => {
                 assertEquals(`["${appWindowName}","variantIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
               })
               assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
-            }
-            hlib.hApiSearch({url: testUrl, tag:'variantIdLookup'}, callback)
+            })
           })
       })
 
@@ -199,15 +205,16 @@ tests({
         gather({invoke:"saveAlleleIdLookup()"})
         waitSeconds(2)
           .then(_ => {
-            function callback(annos) {
+            hlib.search({url: testUrl, tag:'alleleIdLookup'})
+            .then (data => {
+              let annos = data[0]
               assertEquals(2, annos.length)
               annos.forEach(anno => {
                 assertEquals(`["${appWindowName}","alleleIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
               })
               assertEquals('haveGene', localStorage[`${appWindowName}_state`])
               resolve()
-            }
-            hlib.hApiSearch({url: testUrl, tag:'alleleIdLookup'}, callback)
+            })
           })
       })
 
