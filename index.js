@@ -199,14 +199,14 @@ function getGene() {
 function monarchLookup() {
   FSM.beginMonarchLookup()
   let url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
-  window.open(url, appWindowName)
+  window.open(url, 'monarchLookup')
   window.close()
 }
 
 function mseqdrLookup() {
   FSM.beginMseqdrLookup()
   let url = `https://mseqdr.org/search_phenotype.php?hponame=${appVars.SELECTION}&dbsource=HPO`
-  window.open(url, appWindowName)
+  window.open(url, 'mseqdrLookup')
   window.close()
 }
 
@@ -231,14 +231,14 @@ function saveMseqdrLookup() {
 function variantIdLookup() {
   FSM.beginVariantIdLookup()
   let url = `https://www.ncbi.nlm.nih.gov/clinvar/?term=${appVars.GENE}`
-  window.open(url, appWindowName)
+  window.open(url, 'variantIdLookup')
   window.close()
 }
 
 function alleleIdLookup() {
   FSM.beginAlleleIdLookup()
   let url = `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/alleles?externalSource=pubmed&p1=${appVars.PMID}`
-  window.open(url, appWindowName)
+  window.open(url, 'alleleIdLookup')
   window.close()
 }
 
