@@ -70,6 +70,7 @@ function app(event) {
   console.log(`app event type ${event.type}, data ${event.data}`)
 
   if (event.type==='load') {   // advance state machine to cached FSM state
+
     let savedState = localStorage.getItem(storageKeys.STATE)
     if (savedState === 'haveGene') {
       FSM.getGene()
@@ -242,7 +243,7 @@ function alleleIdLookup() {
   window.close()
 }
 
-function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
+async function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
   var params = getApiBaseParams() // save an anchored annotation to the lookup page
   text = `${text} <a href="${appVars.URL}">${appVars.URL}</a>`
   const tags = params.tags.concat([`${tag}`, `gene:${appVars.GENE}`])
@@ -250,15 +251,13 @@ function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
   params.tags = tags
   const token = hlib.getToken()
   let payload = hlib.createAnnotationPayload(params)
-  hlib.postAnnotation(payload, token)
-    .then( data => {
-      params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
-      params.text = text
-      params.tags = tags
-      params.uri = appVars.ARTICLE
-      payload = hlib.createAnnotationPayload(params)
-      postAnnotationAndUpdateState(payload, token, transition)
-    })
+  const data = await hlib.postAnnotation(payload, token)
+  params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
+  params.text = text
+  params.tags = tags
+  params.uri = appVars.ARTICLE
+  payload = hlib.createAnnotationPayload(params)
+  postAnnotationAndUpdateState(payload, token, transition)
   }
 
 function saveVariantIdLookup() {
@@ -305,7 +304,6 @@ function saveApiParams(params) {
 function getApiBaseParams() {
   return {
     group: hypothesisGroup,
-    username: hlib.getUser(),
     uri: appVars.URL,
     exact: appVars.SELECTION,
     prefix: appVars.PREFIX,
@@ -319,7 +317,6 @@ function getApiBaseParams() {
 function getApiBaseParamsMinusSelectors() {
   return {
     group: hypothesisGroup,
-    username: hlib.getUser(),
     uri: appVars.URL,
     tags: [appWindowName],
   }
@@ -354,8 +351,6 @@ function writeViewer(str) {
 
 function clearUI() {
   hlib.getById('viewer').innerHTML = ''
-  hlib.getById('userContainer').innerHTML = ''
-  hlib.getById('tokenContainer').innerHTML = ''
   hlib.getById('actionButton').innerHTML = ''
 }
 
@@ -374,7 +369,7 @@ function savePmidFromInput() {
 }
 
 // post an annotation, then trigger a state transition
-function postAnnotationAndUpdateState(payload, token, transition) {
+async function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     if (transition === 'getGene') {
@@ -386,30 +381,24 @@ function postAnnotationAndUpdateState(payload, token, transition) {
     refreshUI()
   }
 
-  return hlib.postAnnotation(payload, token)
-    .then(data => {
+  const data = await hlib.postAnnotation(payload, token)
+  if (data.status != 200) {
+    alert(`hlib status ${data.status}`)
+    return
+  }
+  const response = JSON.parse(data.response)  
 
-      var response = JSON.parse(data.response)
-      if (data.status != 200) {
-        alert(`hlib status ${data.status}`)
-        return
-      }
+  clearUI()
 
-      clearUI()
+  transit(transition)
 
-      transit(transition)
+  writeViewer(`<p>Annotation posted.
+    <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
+    <p>You can click the ${appWindowName} button to proceed. 
+    <p>Or you can close this window to suspend the workflow, and relaunch ${appWindowName} when ready to proceed.`
+  )
 
-      writeViewer(`<p>Annotation posted.
-       <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
-       <p>You can click the ${appWindowName} button to proceed. 
-       <p>Or you can close this window to suspend the workflow, and relaunch ${appWindowName} when ready to proceed.`
-      )
-
-      refreshSvg()
-    })
-    .catch(e => {
-      console.log(e)
-    })
+  refreshSvg()
 }
 
 function refreshUI() {
@@ -418,56 +407,52 @@ function refreshUI() {
   refreshAnnotationSummary()
 }
 
-function refreshSvg() {
+async function refreshSvg() {
   let dot = StateMachineVisualize(FSM);
   dot = dot.replace('{', '{\n  rankdir=LR;') // use horizontal layout
-  let opts = {
+  const opts = {
     method: 'POST',
     url: 'https://h.jonudell.info/dot',
     params: dot,
   }
-  hlib.httpRequest(opts)
-    .then( data => {
-      hlib.getById('graph').innerHTML = data.response
-      let svgTexts = Array.prototype.slice.call(document.querySelectorAll('svg text'))
-      svgTexts.forEach(t => { 
-        if (t.innerHTML === FSM.state) {
-          t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
-        }
-        // Add links for clickable transitions.
-        // This is another section that can need attention when the state diagram changes, 
-        // and might benefit from a generator.
-        if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup()">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMseqdrLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup()">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inVariantIdLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveVariantIdLookup()">${t.innerHTML}</a>`
-        } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inAlleleIdLookup') ) {
-          t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup()">${t.innerHTML}</a>`
-      }
-    })
+  const data = await hlib.httpRequest(opts)
+  hlib.getById('graph').innerHTML = data.response
+  let svgTexts = Array.prototype.slice.call(document.querySelectorAll('svg text'))
+  svgTexts.forEach(t => { 
+    if (t.innerHTML === FSM.state) {
+      t.parentElement.querySelector('ellipse').setAttribute('fill','lightgray')
+    }
+    // Add links for clickable transitions.
+    // This is another section that can need attention when the state diagram changes, 
+    // and might benefit from a generator.
+    if ( (t.innerHTML==='haveGene') && (FSM.state==='inMonarchLookup') ) {
+      t.innerHTML = `<a xlink:href="javascript:FSM.saveMonarchLookup()">${t.innerHTML}</a>`
+    } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inMseqdrLookup') ) {
+      t.innerHTML = `<a xlink:href="javascript:FSM.saveMseqdrLookup()">${t.innerHTML}</a>`
+    } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inVariantIdLookup') ) {
+      t.innerHTML = `<a xlink:href="javascript:FSM.saveVariantIdLookup()">${t.innerHTML}</a>`
+    } else if ( (t.innerHTML==='haveGene') && (FSM.state==='inAlleleIdLookup') ) {
+      t.innerHTML = `<a xlink:href="javascript:FSM.saveAlleleIdLookup()">${t.innerHTML}</a>`
+    }
   })
 }
 
-function refreshAnnotationSummary() {
-  let opts = {
+async function refreshAnnotationSummary() {
+  const opts = {
     method: 'GET',
     url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE}&tags=gene:${appVars.GENE}`,
     params: {
       limit: 200
     }
   }
-  hlib.httpRequest(opts)
-    .then( data => {
-      let rows = JSON.parse(data.response).rows
-      let output = `<p>Annotations for ${appVars.GENE}: ${rows.length}</p>`
-      rows.forEach(row =>{
-        let anno = hlib.parseAnnotation(row)
-        output += hlib.showAnnotation(anno, 0, 'https://hypothes.is/search?q=tag:')
-      })
-      hlib.getById('annotations').innerHTML = output
-    })
+  const data = await hlib.httpRequest(opts)
+  const rows = JSON.parse(data.response).rows
+  let output = `<p>Annotations for ${appVars.GENE}: ${rows.length}</p>`
+  rows.forEach(row =>{
+    let anno = hlib.parseAnnotation(row)
+    output += hlib.showAnnotation(anno, 0, 'https://hypothes.is/search?q=tag:')
+  })
+  hlib.getById('annotations').innerHTML = output
 }
 
 var FSM
@@ -501,8 +486,10 @@ function createFSM() {
   }()
 }
 
+
 createFSM()
+
 hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
-hlib.createUserInputForm(hlib.getById('userContainer'))
+
 window.onload = app
 

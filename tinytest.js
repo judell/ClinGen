@@ -7,14 +7,9 @@ const red =  '#ff9999';
 
 let testName
 
-let testUrl = 'http://10.0.0.9:8000/test.html'
+let testUrl = 'http://10.0.0.9:8001/test.html'
 
-async function waitSeconds(seconds, data) {
-  await delay(seconds)
-  return data
-  }
-
-function delay(seconds) {
+function waitSeconds(seconds) {
   return new Promise( resolve => setTimeout(resolve, seconds * 1000))
 }  
 
@@ -37,28 +32,21 @@ function clearLocalStorage() {
 
 const TinyTest = {
 
-  run: function(tests) {
+  run: async function(tests) {
 
     clearLocalStorage()
+    
+    const testNames = Object.keys(tests)
 
-    log(testName = 'articleAnnotationsAreRemoved')
-    tests[testName]()
-    .then( _ => {
-    log(testName = 'geneNameSelectionIsSuccessful')
-    tests[testName]()
-    .then( _ => {
-    log(testName = 'monarchLookupIsSuccessful')
-    tests[testName]()
-    .then( _ => {
-    log(testName = 'variantIdLookupIsSuccessful')
-    tests[testName]()
-    .then( _=> {
-    log(testName = 'alleleIdLookupIsSuccessful')
-    tests[testName]()
-    .then( _ => {
-      log('done')
-    }) }) }) }) })
-  },
+    for (i = 0; i < testNames.length; i++) {
+      const testName = testNames[i]
+      await tests[testName]()
+      log(testName)
+    }
+
+    log('done')
+
+ },
 
   assert: function(value) {
     if (!value) {
@@ -93,134 +81,116 @@ tests({
 
   'articleAnnotationsAreRemoved': function() {
     return new Promise ( resolve => {
-      function callback(annos) {
-      }
-      hlib.search({url: testUrl})
-      .then( data => {
-        let annos = data[0]
+      async function runTest() {
+        const data = await hlib.search({url: testUrl})
+        const annos = data[0]
         if ( annos.length === 0 ) {
-          resolve()
+          return
         }
         for ( let i = 0; i < annos.length; i++ ) {
-          let anno = annos[i]
-          let r = hlib.deleteAnnotation(anno.id, hlib.getToken())
-          r.then(data => { assertEquals(200, data.status) })
+          const anno = annos[i]
+          const data = await hlib.deleteAnnotation(anno.id, hlib.getToken())
+          assertEquals(200, data.status)
           if ( i+1 === annos.length) {
-            resolve()
+            return
           }
         }
-      })
+      }
+      resolve(runTest())
     })
   },
 
   'geneNameSelectionIsSuccessful': function () {
     return new Promise(resolve => {
-      let selection = window.getSelection()
-      let geneName = hlib.getById('geneName')
-      geneName.style.color = 'red'
-      selection.selectAllChildren(geneName)
-      gather({ invoke: "getGene()" })
-      waitSeconds(5)
-        .then(_ => {
-          hlib.search({url: testUrl, tags:'gene:TMEM260'})
-          .then (data => {
-            let annos = data[0]
-            assertEquals(1, annos.length)
-            assertEquals(`["${appWindowName}","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
-            assertEquals('haveGene', localStorage[`${appWindowName}_state`])
-            resolve()
-          })
-        })
-      })
+      async function runTest() {
+        const selection = window.getSelection()
+        const geneName = hlib.getById('geneName')
+        geneName.style.color = 'red'
+        selection.selectAllChildren(geneName)
+        gather({ invoke: "getGene()" })
+        await waitSeconds(3)
+        const data = await hlib.search({url: testUrl, tags:'gene:TMEM260'})
+        const annos = data[0]
+        assertEquals(1, annos.length)
+        assertEquals(`["${appWindowName}","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
+        assertEquals('haveGene', localStorage[`${appWindowName}_state`])
+      }
+      resolve(runTest())
+    })
   },
 
   'monarchLookupIsSuccessful': function () {
     return new Promise(resolve => {
-      let selection = window.getSelection()
-      let hpoLookupTerm = hlib.getById('hpoLookupTerm')
-      hpoLookupTerm.style.color = 'red'
-      selection.selectAllChildren(hpoLookupTerm)
-      gather({invoke:"FSM.beginMonarchLookup()"})
-      waitSeconds(2)
-      .then(_ => {
+      async function runTest() {
+        let selection = window.getSelection()
+        let hpoLookupTerm = hlib.getById('hpoLookupTerm')
+        hpoLookupTerm.style.color = 'red'
+        selection.selectAllChildren(hpoLookupTerm)
+        gather({invoke:"FSM.beginMonarchLookup()"})
+        await waitSeconds(2)
         assertEquals('inMonarchLookup', localStorage[`${appWindowName}_state`])
         assertEquals('truncus arteriosus', localStorage[`${appWindowName}_selection`])
         gather({invoke:"saveMonarchLookup()"})
-        waitSeconds(2)
-          .then(_ => {
-            hlib.search({url: testUrl, tag:'monarchLookup'})
-            .then ( data => {
-              let annos = data[0]
-              assertEquals(1, annos.length)
-              assertEquals(`["${appWindowName}","hpoLookup","monarchLookup","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
-              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
-              resolve()
-            })
-          })
-      })
-  })
+        await waitSeconds(2)
+        const data = await hlib.search({url: testUrl, tag:'monarchLookup'})
+        const annos = data[0]
+        assertEquals(1, annos.length)
+        assertEquals(`["${appWindowName}","hpoLookup","monarchLookup","gene:TMEM260"]`, JSON.stringify(annos[0].tags))
+        assertEquals('haveGene', localStorage[`${appWindowName}_state`])
+      }
+    resolve(runTest())
+    })
   },
 
   'variantIdLookupIsSuccessful': function() {
     return new Promise(resolve => {
-      let selection = window.getSelection()
-      let variantId = hlib.getById('variantId')
-      variantId.style.color = 'red'
-      selection.selectAllChildren(variantId)
-      gather({invoke:"FSM.beginVariantIdLookup()"})
-      waitSeconds(2)
-      .then(_ => {
+      async function runTest() {
+        let selection = window.getSelection()
+        let variantId = hlib.getById('variantId')
+        variantId.style.color = 'red'
+        selection.selectAllChildren(variantId)
+        gather({invoke:"FSM.beginVariantIdLookup()"})
+        await waitSeconds(2)
         assertEquals('inVariantIdLookup', localStorage[`${appWindowName}_state`])
         assertEquals('564085', localStorage[`${appWindowName}_selection`])
         gather({invoke:"saveVariantIdLookup()"})
-        waitSeconds(2)
-          .then(_ => {
-            hlib.search({url: testUrl, tag:'variantIdLookup'})
-            .then ( data => {
-              let annos = data[0]
-              assertEquals(2, annos.length)
-              annos.forEach(anno => {
-                assertEquals(`["${appWindowName}","variantIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
-              })
-              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
-              resolve()
-            })
-          })
-      })
-
-    })
+        await waitSeconds(2)
+        const data = await hlib.search({url: testUrl, tag:'variantIdLookup'})
+        const annos = data[0]
+        assertEquals(2, annos.length)
+        annos.forEach(anno => {
+          assertEquals(`["${appWindowName}","variantIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
+        })
+        assertEquals('haveGene', localStorage[`${appWindowName}_state`])
+      }
+    resolve(runTest())
+  })
   },
 
   'alleleIdLookupIsSuccessful': function() {
     return new Promise(resolve => {
+      async function runTest() {
       let selection = window.getSelection()
       let alleleId = hlib.getById('alleleId')
       alleleId.style.color = 'red'
       selection.selectAllChildren(alleleId)
       gather({invoke:"FSM.beginAlleleIdLookup()"})
-      waitSeconds(2)
-      .then(_ => {
-        assertEquals('inAlleleIdLookup', localStorage[`${appWindowName}_state`])
-        assertEquals('CA7200051', localStorage[`${appWindowName}_selection`])
-        gather({invoke:"saveAlleleIdLookup()"})
-        waitSeconds(2)
-          .then(_ => {
-            hlib.search({url: testUrl, tag:'alleleIdLookup'})
-            .then (data => {
-              let annos = data[0]
-              assertEquals(2, annos.length)
-              annos.forEach(anno => {
-                assertEquals(`["${appWindowName}","alleleIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
-              })
-              assertEquals('haveGene', localStorage[`${appWindowName}_state`])
-              resolve()
-            })
-          })
+      await waitSeconds(2)
+      assertEquals('inAlleleIdLookup', localStorage[`${appWindowName}_state`])
+      assertEquals('CA7200051', localStorage[`${appWindowName}_selection`])
+      gather({invoke:"saveAlleleIdLookup()"})
+      await waitSeconds(2)
+      const data = await hlib.search({url: testUrl, tag:'alleleIdLookup'})
+      const annos = data[0]
+      assertEquals(2, annos.length)
+      annos.forEach(anno => {
+        assertEquals(`["${appWindowName}","alleleIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
       })
-
-    })
-  },  
-
+      assertEquals('haveGene', localStorage[`${appWindowName}_state`])
+    }
+    resolve(runTest())
   })
+  }
+})
   
       
