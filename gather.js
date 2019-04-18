@@ -115,7 +115,10 @@ function gather(testArgs) {
     params = Object.assign(testArgs, params)
   }
 
-  appWindow.postMessage(params, '*') // talk to the app
-  window.getSelection().empty()
+  console.log(`gather sending ${JSON.stringify(params)}`)
+  setTimeout( function() {
+    appWindow.postMessage(params, '*') // talk to the app
+    window.getSelection().empty()
+  }, 200)
 }
 
