@@ -106,7 +106,7 @@ function gather(testArgs) {
     <button title="Invoke ${appWindowName}" onclick="gather()">${appWindowName}</button>
     <button title="Do HGVS lookup" onclick="hgvs()">HGVS</button>`
     document.body.insertBefore(activator, document.body.firstChild)
-    let opener = "width=700, height=900, toolbar=yes, top=-1000"
+    let opener = `width=700,height=900,top=${window.screenTop},left=${window.screenLeft + window.innerWidth}`
     appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
     //appWindow = window.open( `http://10.0.0.9:8001/index.html`, appWindowName, opener)
   } 
