@@ -13,9 +13,13 @@ To run the tests:
 
 1. python server.py
 
-2. In gather.js, use the alternate opener `window.open( `http://localhost:8001/index.html ...`
+2. visit http://localhost:8001/
 
-3. visit http://localhost.8001/test.html
+3. Enter your Hypothesis username and token
+
+4. In gather.js, use the alternate opener `window.open( `http://localhost:8001/index.html ...`
+
+5. visit http://localhost.8001/test.html
 
 ## Demos
 
