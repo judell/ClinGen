@@ -233,7 +233,6 @@ tests({
     return new Promise (resolve => {
       async function worker() {
         await cleanup()
-        softReload()
         resolve()
       }
       worker()
