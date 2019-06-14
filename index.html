@@ -25,16 +25,19 @@ body {
    width: 100%;
    height: auto;
  }
- .clinGenSelection {
-   font-style: italic;
- }
  a {
    text-decoration: underline;
+ }
+ #formContainer {
+   margin-bottom: 20px;
  }
  .annotationTags a {
    text-decoration: none;
  }
-</style>
+ .clinGenSelection {
+   font-style: italic;
+ }
+ </style>
 </head>
 
 <body>
@@ -42,7 +45,8 @@ body {
 <h1>ClinGen curation workflow</h1>  
 
 <div id="formContainer">
-  <div class="formField" id="tokenContainer"></div>
+  <div id="userContainer"></div>  
+  <div id="tokenContainer"></div>
 </div>
 
 <div id="viewer"></div>
