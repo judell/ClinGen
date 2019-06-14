@@ -7,6 +7,16 @@ Runs from a bookmarklet, e.g.:
 
 Uses https://github.com/jakesgordon/javascript-state-machine and https://github.com/judell/hlib
 
+## Tests
+
+To run the tests:
+
+1. python server.py
+
+2. In gather.js, use the alternate opener `window.open( `http://localhost:8001/index.html ...`
+
+3. visit http://localhost.8001/test.html
+
 ## Demos
 
 Interactive 
