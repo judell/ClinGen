@@ -64,6 +64,14 @@ window.addEventListener('message', function(event) {
   } 
 })
 
+function setUser() {
+  localStorage.setItem('h_user', document.querySelector('#userContainer input').value)
+}
+
+function getUser() {
+  return localStorage.getItem('h_user')
+}
+
 // called with a load event initially, then with message events
 function app(event) {
 
@@ -486,10 +494,14 @@ function createFSM() {
   }()
 }
 
-
 createFSM()
 
 hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
+const userContainer = hlib.getById('userContainer')
+hlib.createFacetInputForm(userContainer, 'Hypothesis username matching API token')
+userInput = userContainer.querySelector('input')
+userInput.value = localStorage.getItem('h_user')
+userInput.setAttribute('onchange', 'setUser()')
 
 window.onload = app
 
