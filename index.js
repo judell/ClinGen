@@ -401,12 +401,12 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   transit(transition)
 
   writeViewer(`<p>Annotation posted.
-    <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400"></iframe></div>
-    <p>You can click the ${appWindowName} button to proceed. 
-    <p>Or you can close this window to suspend the workflow, and relaunch ${appWindowName} when ready to proceed.`
+    <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400">
+    </iframe></div>`
   )
 
-  refreshSvg()
+  await hlib.delaySeconds(1)
+  location.href = location.href
 }
 
 function refreshUI() {
