@@ -14,9 +14,7 @@ const storageKeys = {
   END: `${appWindowName}_end`,
   PMID: `${appWindowName}_pmid`,
   DOI: `${appWindowName}_doi`,
-  GROUP_PHENOTYPE: `${appWindowName}_group_phenotype`,
-  FAMILY_PHENOTYPE: `${appWindowName}_family_phenotype`,
-  INDIVIDUAL_PHENOTYPE: `${appWindowName}_individual_phenotype`,
+  LOOKUP_TYPE: `${appWindowName}_lookupType`,
 }
 
 // loaded from localStorage when the app loads, updated when messages arrive
@@ -29,6 +27,7 @@ const appVars = {
   START: undefined,
   END: undefined,
   PMID: undefined,
+  LOOKUP_TYPE: undefined
 }
 
 const clearSelectionEvent = {
@@ -42,12 +41,11 @@ const reloadEvent = {
 // for message-delivered data other than appVars (e.g. pmid, doi)
 var eventData = {}
 
-
 // just public for now, can swap in the group picker as/when needed
 const hypothesisGroup = '__world__'
 
-function answer(e) {
-  localStorage[`${appWindowName}_${e.name}`] = e.checked
+function answer() {
+  setLookupType()
 }
 
 // listen for messages from the host
@@ -71,6 +69,18 @@ function setUser() {
 function getUser() {
   return localStorage.getItem('h_user')
 }
+
+function setLookupType() {
+  localStorage.setItem(storageKeys.LOOKUP_TYPE, document.querySelector('input[name=lookupType]:checked').value)
+}
+
+function getLookupType() {
+  const value = localStorage.getItem(storageKeys.LOOKUP_TYPE)
+  return value ? value : 'individual'
+}
+
+
+
 
 // called with a load event initially, then with message events
 function app(event) {
@@ -108,19 +118,34 @@ function app(event) {
   refreshUI()
 
   // app window is open, handle messages
-  
+
+  function isChecked(value) {
+    if ( getLookupType() === value ) {
+      return ' checked '
+    } else {
+      return ''
+    }
+
+  }
+
   let lookupBoilerplate = `
+    <p>
+    <div>I am looking phenotypes for:
+    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('individual')} value="individual"> individual </div> 
+    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('group')}      value="group"> group </div>
+    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('family')}     value="family"> family </div>
+    </p>
     <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>,
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:variantIdLookup">variant ID lookups</a>,
       and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:alleleIdLookup">allele ID lookups</a>`
 
   let hpoLookupBoilerplate = `
-    <li>Look up the selection in <a href="javascript:monarchLookup()">Monarch</a>
-    <li>Look up the selection in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
+    <li>HPO lookup for ${appVars.SELECTION} in <a href="javascript:monarchLookup()">Monarch</a>
+    <li>HPO lookup for ${appVars.SELECTION} in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
 
   let variantLookupBoilerplate = `
-    <li>Find the ClinVar variant ID for ${appVars.GENE} in <a href="javascript:variantIdLookup()">ClinVar</a>
-    <li>Find the canonical allele identifier for ${appVars.GENE} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
+    <li>Variant ID lookup for ${appVars.GENE} in <a href="javascript:variantIdLookup()">ClinVar</a>
+    <li>Allele identifier lookup for ${appVars.GENE} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
   appendViewer(`
     <div><b>Article</b>: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></div>
@@ -133,14 +158,7 @@ function app(event) {
   // state-dependent messages to user
   if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
     appendViewer(`
-      <p>Let's get started. First, please tick the relevant boxes.
-      <p>
-      <div><input type="checkbox" onchange="answer(this)" name="groupPhenotype"</div> Will you have group phenotype info?
-      <div><input type="checkbox" onchange="answer(this)" name="familyPhenotype"</div> Will you have family phenotype info?
-      <div><input type="checkbox" onchange="answer(this)" name="individualPhenotype"</div> Will you have individual phenotype info?
-      </p>
-
-      <p>Then, to begin a curation, go to an article, click the ${appWindowName} bookmarklet,
+      <p>To begin a curation, go to an article, click the ${appWindowName} bookmarklet,
       select the name of a gene, and click the ${appWindowName} button.
       </ul>`
     )
@@ -340,13 +358,14 @@ function loadAppVars() {
   appVars.START = localStorage.getItem(storageKeys.START)
   appVars.END = localStorage.getItem(storageKeys.END)
   appVars.PMID = localStorage.getItem(storageKeys.PMID)
+  appVars.LOOKUP_TYPE = localStorage.getItem(storageKeys.LOOKUP_TYPE)
 }
 
 function resetWorkflow() {
   Object.values(storageKeys).forEach(storageKey => {
     delete localStorage[storageKey]
   });
-  window.close()
+  location.href = location.href
 }
 
 function appendViewer(str) {
@@ -446,6 +465,7 @@ async function refreshSvg() {
 }
 
 async function refreshAnnotationSummary() {
+  return
   const opts = {
     method: 'GET',
     url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE}&tags=gene:${appVars.GENE}`,
