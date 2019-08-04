@@ -10,20 +10,22 @@ var appWindow
 
 // when there's a selection, move the activator button to it
 document.addEventListener('mouseup', e => {
-  let activator = hlib.getById('activator')
+  const activator = hlib.getById('activator')
   if (document.getSelection().type==='Range' && e.target.tagName !== 'BUTTON') {
     activator.style.left = `${e.pageX}px`
     activator.style.top = `${e.pageY}px`
+    activator.style.display = 'block'
   } else {
     activator.style.left = 0
     activator.style.top = 0
+    activator.style.display = 'none'
     appWindow.postMessage('clearSelection', '*')
   }
 
 })
 
 if ( typeof appWindow === 'object' ) {
-  alert(`The ${appWindowName} app is open in another window. Please use the ${appWindowName} button in this window to continue the workflow.`);
+  alert(`The ${appWindowName} app is already running.`);
 } else {
   gather()
 }
@@ -46,50 +48,46 @@ window.onunload = function() {
 }
 
 function hgvs() {
-  let selection = window.getSelection().toString()
+  const selection = window.getSelection().toString()
   window.open( `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/allele?hgvs=${selection}`, 'hgvs')
 }
 
 function gather(testArgs) {
 
   // always pass the url at which the bookmarklet activated
-  let params = {
-    uri: location.href,
+  // call it target_uri because it will be the target of annotations,
+  // either on the paper being curated, or on lookup pages elsewhere, or both
+  const params = {
+    target_uri: location.href,
   }
 
-  let selection = document.getSelection()
+  const selection = document.getSelection()
   
   if ( selection.type==='Range' ) {
     // we have a selection to use as the target of an annotation
     // gather the selector info
-    let range = selection.getRangeAt(0)
+    const range = selection.getRangeAt(0)
 
-    let quoteSelector = anchoring.TextQuoteAnchor.fromRange(document.body, range)
+    const quoteSelector = anchoring.TextQuoteAnchor.fromRange(document.body, range)
     params.exact = quoteSelector.exact
     params.prefix = quoteSelector.prefix
 
     params.selection = params.exact
     
-    let positionSelector = anchoring.TextPositionAnchor.fromRange(document.body, range)
+    const positionSelector = anchoring.TextPositionAnchor.fromRange(document.body, range)
     params.start = positionSelector.start
     params.end = positionSelector.end
   }
 
-  // capture doi and pmid if available
-  let metaDoi = document.head.querySelector('meta[name="citation_doi"]')
-  params.doi = (metaDoi && metaDoi.content) ? metaDoi.content : undefined
-  
-  let metaPmid = document.head.querySelector('meta[name="citation_pmid"]')
-  params.pmid = (metaPmid && metaPmid.content) ? metaPmid.content : undefined
+  const metaPmid = document.head.querySelector('meta[name="citation_pmid"]')
+  const pmid = (metaPmid && metaPmid.content) ? metaPmid.content : undefined
+  params.pmid = pmid
 
   // common tag for all ClinGen-related annotations
   params.tags = [appWindowName]
 
   // gather metadata if available
-  if ( params.doi ) { params.tags.push('doi:' + params.doi) }
-  if ( params.pmid ) { params.tags.push('pmid:' + params.pmid) }
-
-  let encodedParams = encodeURIComponent(JSON.stringify(params));
+    if ( params.pmid ) { params.tags.push('pmid:' + params.pmid) }
 
   // call the app with:
   //   always: uri of page on which the bookmarklet was activated
@@ -98,17 +96,19 @@ function gather(testArgs) {
   if (!appWindow) {   // open the app
     let activator = document.createElement('div')
     activator.id = 'activator'
-    activator.style['position'] = 'absolute'
-    activator.style['z-index'] = 999999999
-    activator.style['top'] = 0
-    activator.style['left'] = 0
+    activator.style.position = 'absolute'
+    activator.style.zIndex = 999999999
+    activator.style.top = 0
+    activator.style.left = 0
+    activator.style.display = 'none'
     activator.innerHTML = `
     <button title="Invoke ${appWindowName}" onclick="gather()">${appWindowName}</button>
     <button title="Do HGVS lookup" onclick="hgvs()">HGVS</button>`
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = `width=700,height=900,top=${window.screenTop},left=${window.screenLeft + window.innerWidth}`
     //appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
-    appWindow = window.open( `http://localhost:8001/index.html`, appWindowName, opener)
+    const target_uri = encodeURIComponent(location.href)
+    appWindow = window.open( `http://localhost:8001/index.html?target_uri=${target_uri}&pmid=${pmid}`, appWindowName, opener)
   } 
 
   if (testArgs) {

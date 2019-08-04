@@ -3,31 +3,17 @@
 const appWindowName = 'ClinGen'
 
 // localStorage keys used to remember FSM state and related app state
-const storageKeys = {
+const appStateKeys = {
   STATE: `${appWindowName}_state`,
   GENE: `${appWindowName}_gene`,
-  ARTICLE: `${appWindowName}_article`,
-  URL: `${appWindowName}_url`,
+  ARTICLE_URL: `${appWindowName}_articleUrl`,
+  TARGET_URI: `${appWindowName}_targetUri`,
   SELECTION: `${appWindowName}_selection`,
   PREFIX: `${appWindowName}_prefix`,
   START: `${appWindowName}_start`,
   END: `${appWindowName}_end`,
   PMID: `${appWindowName}_pmid`,
-  DOI: `${appWindowName}_doi`,
   LOOKUP_TYPE: `${appWindowName}_lookupType`,
-}
-
-// loaded from localStorage when the app loads, updated when messages arrive
-const appVars = {
-  GENE: undefined,
-  ARTICLE: undefined,
-  URL: undefined,
-  SELECTION: undefined,
-  PREFIX: undefined,
-  START: undefined,
-  END: undefined,
-  PMID: undefined,
-  LOOKUP_TYPE: undefined
 }
 
 const clearSelectionEvent = {
@@ -38,49 +24,21 @@ const reloadEvent = {
   type: "reload"
 }
 
-// for message-delivered data other than appVars (e.g. pmid, doi)
-var eventData = {}
-
 // just public for now, can swap in the group picker as/when needed
 const hypothesisGroup = '__world__'
-
-function answer() {
-  setLookupType()
-}
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
   console.log(`listener event ${JSON.stringify(event)}`)
   if ( event.data === 'clearSelection' ) {
-    saveAppVar(storageKeys.SELECTION, '')
+    setAppVar(appStateKeys.SELECTION, '')
     app(clearSelectionEvent)
   } else if ( event.data === `Close${appWindowName}` ) {
     window.close()
-  } else if (event.data.tags && event.data.tags.indexOf(appWindowName) != -1) {
-    eventData = event.data // remember, e.g., the pmid and doi found in the base article
+  } else if (event.data.tags && event.data.tags.indexOf(appWindowName) != -1) { 
     app(event)
   } 
 })
-
-function setUser() {
-  localStorage.setItem('h_user', document.querySelector('#userContainer input').value)
-}
-
-function getUser() {
-  return localStorage.getItem('h_user')
-}
-
-function setLookupType() {
-  localStorage.setItem(storageKeys.LOOKUP_TYPE, document.querySelector('input[name=lookupType]:checked').value)
-}
-
-function getLookupType() {
-  const value = localStorage.getItem(storageKeys.LOOKUP_TYPE)
-  return value ? value : 'individual'
-}
-
-
-
 
 // called with a load event initially, then with message events
 function app(event) {
@@ -89,7 +47,10 @@ function app(event) {
 
   if (event.type==='load') {   // advance state machine to cached FSM state
 
-    let savedState = localStorage.getItem(storageKeys.STATE)
+    setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
+    setAppVar(appStateKeys.PMID, hlib.gup('pmid'))
+
+    const savedState = getAppVar(appStateKeys.STATE)
     if (savedState === 'haveGene') {
       FSM.getGene()
     } else if (savedState === 'inMonarchLookup') {
@@ -101,18 +62,20 @@ function app(event) {
     } else if (savedState === 'inAlleleIdLookup') {
       FSM.getGene(); FSM.beginAlleleIdLookup()
     }
-  } else if (event.type==='clearSelection') {
-    // nothing specific to do here, just need a repaint
-  } else if (event.type==='reload') {
-    // just repaint
-  } else if (event.data) {                     
+  } else if (event.data) {
+    if (! getAppVar(appStateKeys.ARTICLE_URL)) {  
+      setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
+    }
     saveApiParams(event.data)  // save params for H api call
+  } else if (event.type==='clearSelection') {
+  // nothing specific to do here, just need a repaint
+  } else if (event.type==='reload') {
+  // just repaint
   }
 
-  loadAppVars()
-  
-  if (event.data && event.data.invoke) {
-    eval(event.data.invoke)
+  // used only by the test harness
+  if (event.data && event.data.invoke) {  
+    eval(event.data.invoke) 
   }  
 
   refreshUI()
@@ -125,8 +88,13 @@ function app(event) {
     } else {
       return ''
     }
-
   }
+
+  const gene = getAppVar(appStateKeys.GENE)
+  const pmid = getAppVar(appStateKeys.PMID)
+  const selection = getAppVar(appStateKeys.SELECTION)
+  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
 
   let lookupBoilerplate = `
     <p>
@@ -135,47 +103,47 @@ function app(event) {
     <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('group')}      value="group"> group </div>
     <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('family')}     value="family"> family </div>
     </p>
-    <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:hpoLookup">HPO lookups</a>,
-      <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:variantIdLookup">variant ID lookups</a>,
-      and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${appVars.GENE}+tag:alleleIdLookup">allele ID lookups</a>`
+    <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
+      <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
+      and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>`
 
   let hpoLookupBoilerplate = `
-    <li>HPO lookup for ${appVars.SELECTION} in <a href="javascript:monarchLookup()">Monarch</a>
-    <li>HPO lookup for ${appVars.SELECTION} in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
+    <li>HPO lookup for ${selection} in <a href="javascript:monarchLookup()">Monarch</a>
+    <li>HPO lookup for ${selection} in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
 
   let variantLookupBoilerplate = `
-    <li>Variant ID lookup for ${appVars.GENE} in <a href="javascript:variantIdLookup()">ClinVar</a>
-    <li>Allele identifier lookup for ${appVars.GENE} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
+    <li>Variant ID lookup for ${gene} in <a href="javascript:variantIdLookup()">ClinVar</a>
+    <li>Allele identifier lookup for ${gene} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
   appendViewer(`
-    <div><b>Article</b>: <a href="${appVars.ARTICLE}">${appVars.ARTICLE}</a></div>
-    <div><b>PMID</b>: <input id="pmid" value="${appVars.PMID}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
-    <div><b>Gene</b>: ${appVars.GENE}</div>
-    <div><b>URL</b>: ${appVars.URL}</div>
-    <div><b>Selection</b>: "<span class="clinGenSelection">${appVars.SELECTION}</span>"</div>`
+  <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
+  <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
+  <div><b>PMID</b>: <input id="pmid" value="${pmid}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
+    <div><b>Gene</b>: ${gene}</div>
+    <div><b>Selection</b>: "<span class="clinGenSelection">${selection}</span>"</div>`
   )
 
   // state-dependent messages to user
-  if ( FSM.state === 'needGene' && ! appVars.SELECTION ) {
+  if ( FSM.state === 'needGene' && ! selection ) {
     appendViewer(`
-      <p>To begin a curation, go to an article, click the ${appWindowName} bookmarklet,
+      <p>To begin a curation, go to the window where you clicked the bookmarklet, 
       select the name of a gene, and click the ${appWindowName} button.
       </ul>`
     )
-  } else if ( FSM.state === 'needGene' && appVars.SELECTION) {
+  } else if ( FSM.state === 'needGene' && selection) {
     appendViewer(`
-      <p>Begin a gene curation for <span class="clinGenSelection">${appVars.SELECTION}</span> in ${appVars.URL}
+      <p>Begin a gene curation for ${selection} in ${articleUrl}
       <p><button onclick="getGene()"> begin </button>`
     )
-  } else if ( FSM.state === 'haveGene' && ! appVars.SELECTION) {
+  } else if ( FSM.state === 'haveGene' && ! selection) {
     appendViewer(`
       ${lookupBoilerplate}
-      <p>Nothing is selected in the current article. 
+      <p>Nothing is selected in the current article.
       <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} ClinGen button to save the selection and continue.
-      <p>Variant ID lookups and allele lookups don't depend on a selection in the article, so you can proceed directly with those.
+      <p>Variant ID lookups and allele lookups don't depend on a selection, so you can proceed directly with those.
       ${variantLookupBoilerplate}`
     )
-  } else if (FSM.state === 'haveGene' && appVars.SELECTION) {
+  } else if (FSM.state === 'haveGene' && selection) {
     appendViewer(`
       ${lookupBoilerplate}
       <ul>
@@ -186,24 +154,24 @@ function app(event) {
   } else if ( FSM.state === 'inMonarchLookup') {
     appendViewer(`
       <p>Annotate the current article with a reference to 
-      <a href="${appVars.URL}">${appVars.URL}</a> as the Monarch lookup result for "${appVars.SELECTION}"?
+      <a href="${targetUri}">${targetUri}</a> as the Monarch lookup result for "${selection}"?
       <p><button onclick="saveMonarchLookup()">post</button>`
     )
   } else if ( FSM.state === 'inMseqdrLookup') {
     appendViewer(`
       <p>Annotate the current article with a reference to  
-      <a href="${appVars.URL}">${appVars.URL}</a> as the Mseqdr lookup result for "${appVars.SELECTION}"?
+      <a href="${targetUri}">${targetUri}</a> as the Mseqdr lookup result for "${selection}"?
       <p><button onclick="saveMseqdrLookup()">post</button>`
     )
   } else if ( FSM.state === 'inVariantIdLookup') {
     appendViewer(`
-    <p>Annotate the current article with a page note indicating the variant ID (${appVars.SELECTION})?
+    <p>Annotate the current article with a page note indicating the variant ID (${selection})?
     <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
     <p><button onclick="saveVariantIdLookup()">post</button>`
   )
   } else if ( FSM.state === 'inAlleleIdLookup') {
     appendViewer(`
-      <p>Annotate the current article with a page note indicating the canonoical allele ID (${appVars.SELECTION})?
+      <p>Annotate the current ARTICLE_URL with a page note indicating the canonoical allele ID (${selection})?
       <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
       <p><button onclick="saveAlleleIdLookup()">post</button>`
     )    
@@ -216,8 +184,8 @@ function app(event) {
 
 function getGene() {
   let params = getApiBaseParams()
-  params.tags.push('gene:' + appVars.SELECTION)
-  params.tags = params.tags.concat(getPmidAndDoi())
+  params.tags.push(`gene:${getAppVar(appStateKeys.GENE)}`)
+  params.tags.push(`pmid:${getAppVar(appStateKeys.PMID)}`)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
   postAnnotationAndUpdateState(payload, token, 'getGene')
@@ -225,23 +193,23 @@ function getGene() {
 
 function monarchLookup() {
   FSM.beginMonarchLookup()
-  let url = `https://monarchinitiative.org/search/${appVars.SELECTION}`
+  const url = `https://monarchinitiative.org/search/${selection}`
   window.open(url, 'monarchLookup')
   window.close()
 }
 
 function mseqdrLookup() {
   FSM.beginMseqdrLookup()
-  let url = `https://mseqdr.org/search_phenotype.php?hponame=${appVars.SELECTION}&dbsource=HPO`
+  const url = `https://mseqdr.org/search_phenotype.php?hponame=${selection}&dbsource=HPO`
   window.open(url, 'mseqdrLookup')
   window.close()
 }
 
 function saveLookupAsPageNote(text, tags, transition) {
   let params = getApiBaseParams()
-  params.text = `${text}: <a href="${appVars.URL}">${appVars.URL}</a>`
-  params.uri = appVars.ARTICLE 
-  params.tags = params.tags.concat(tags, `gene:${appVars.GENE}`)
+  params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
+  const gene = getAppVar(appStateKeys.GENE)
+  params.tags = params.tags.concat(tags, `gene:${gene}`)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
   postAnnotationAndUpdateState(payload, token, transition)
@@ -257,31 +225,33 @@ function saveMseqdrLookup() {
 
 function variantIdLookup() {
   FSM.beginVariantIdLookup()
-  let url = `https://www.ncbi.nlm.nih.gov/clinvar/?term=${appVars.GENE}`
+  const gene = getAppVar(appStateKeys.GENE)
+  const url = `https://www.ncbi.nlm.nih.gov/clinvar/?term=${gene}`
   window.open(url, 'variantIdLookup')
   window.close()
 }
 
 function alleleIdLookup() {
   FSM.beginAlleleIdLookup()
-  let url = `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/alleles?externalSource=pubmed&p1=${appVars.PMID}`
+  const pmid = getAppVar(appStateKeys.PMID)
+  const url = `https://reg.clinicalgenome.org/redmine/projects/registry/genboree_registry/alleles?externalSource=pubmed&p1=${pmid}`
   window.open(url, 'alleleIdLookup')
   window.close()
 }
 
 async function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
+  const gene = getAppVar(appStateKeys.GENE)
   var params = getApiBaseParams() // save an anchored annotation to the lookup page
-  text = `${text} <a href="${appVars.URL}">${appVars.URL}</a>`
-  const tags = params.tags.concat([`${tag}`, `gene:${appVars.GENE}`])
+  text = `${text} <a href="${params.targetUri}">${params.targetUri}</a>`
+  const tags = params.tags.concat([`${tag}`, `gene:${gene}`])
   params.text = text
   params.tags = tags
   const token = hlib.getToken()
   let payload = hlib.createAnnotationPayload(params)
   const data = await hlib.postAnnotation(payload, token)
-  params = getApiBaseParamsMinusSelectors() // also save a page note on the base article, so omit selectors
+  params = getApiBaseParamsMinusSelectors() // also save a page note on the current article, so omit selectors
   params.text = text
   params.tags = tags
-  params.uri = appVars.ARTICLE
   payload = hlib.createAnnotationPayload(params)
   postAnnotationAndUpdateState(payload, token, transition)
   }
@@ -294,75 +264,84 @@ function saveAlleleIdLookup() {
   saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
 }
 
-function getPmidAndDoi() {
-  var tags = []
-  let pmid = eventData.pmid
-  if (pmid) {
-    tags.push('pmid:' + pmid)
-    savePmid(pmid)
-  }
-  if (eventData.doi) {
-    tags.push('doi:'+eventData.doi)
-  }
-  return tags
+// utility functions
+
+function setAppVar(key, value) {
+  localStorage.setItem(key, value)
 }
 
-// save params used by h api calls
+function getAppVar(key) {
+  return localStorage.getItem(key)
+}
+
+function setUser() {
+  localStorage.setItem('h_user', document.querySelector('#userContainer input').value)
+}
+
+function getUser() {
+  return localStorage.getItem('h_user')
+}
+
+function setLookupType() {
+  setAppVar(appStateKeys.LOOKUP_TYPE, document.querySelector('input[name=lookupType]:checked').value)
+}
+
+function getLookupType() {
+  const value = getAppVar(appStateKeys.LOOKUP_TYPE)
+  return value ? value : 'individual'
+}
+
 function saveApiParams(params) {
-  if (params.uri) {
-    saveAppVar(storageKeys.URL, params.uri)
+  if (params.target_uri) {
+    setAppVar(appStateKeys.TARGET_URI, params.target_uri)
   }
   if (params.exact) {
-    saveAppVar(storageKeys.SELECTION, params.exact.trim())
+    setAppVar(appStateKeys.SELECTION, params.exact.trim())
   }
   if (params.prefix) {
-    saveAppVar(storageKeys.PREFIX, params.prefix)
+    setAppVar(appStateKeys.PREFIX, params.prefix)
   }
   if (params.start) {
-    saveAppVar(storageKeys.START, params.start)
+    setAppVar(appStateKeys.START, params.start)
   }
   if (params.end) {
-    saveAppVar(storageKeys.END, params.end)
+    setAppVar(appStateKeys.END, params.end)
   }
+}
+
+function baseTags() {
+  const tags = [appWindowName]
+  const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
+  if (lookupType) {
+    tags.push(`phenotype:${lookupType}`)
+  }
+  return tags
 }
 
 // get base params for an annotation with selectors
 function getApiBaseParams() {
   return {
     group: hypothesisGroup,
-    uri: appVars.URL,
-    exact: appVars.SELECTION,
-    prefix: appVars.PREFIX,
-    start: appVars.START,
-    end: appVars.END,
-    tags: [appWindowName],
-  }
+    uri: getAppVar(appStateKeys.TARGET_URI),
+    exact: getAppVar(appStateKeys.SELECTION),
+    prefix: getAppVar(appStateKeys.PREFIX),
+    start: getAppVar(appStateKeys.START),
+    end: getAppVar(appStateKeys.END),
+    tags: baseTags()
+    }
 }
 
 // get base params for an annotation with no selectors
 function getApiBaseParamsMinusSelectors() {
   return {
     group: hypothesisGroup,
-    uri: appVars.URL,
-    tags: [appWindowName],
+    uri: getAppVar(appStateKeys.TARGET_URI),
+    tags: baseTags()
   }
 }
 
-// load appVars from localStorage
-function loadAppVars() {
-  appVars.GENE = localStorage.getItem(storageKeys.GENE)
-  appVars.ARTICLE = localStorage.getItem(storageKeys.ARTICLE)
-  appVars.URL = localStorage.getItem(storageKeys.URL)
-  appVars.SELECTION = localStorage.getItem(storageKeys.SELECTION)
-  appVars.PREFIX = localStorage.getItem(storageKeys.PREFIX)
-  appVars.START = localStorage.getItem(storageKeys.START)
-  appVars.END = localStorage.getItem(storageKeys.END)
-  appVars.PMID = localStorage.getItem(storageKeys.PMID)
-  appVars.LOOKUP_TYPE = localStorage.getItem(storageKeys.LOOKUP_TYPE)
-}
-
 function resetWorkflow() {
-  Object.values(storageKeys).forEach(storageKey => {
+  Object.values(appStateKeys).forEach(storageKey => {
     delete localStorage[storageKey]
   });
   location.href = location.href
@@ -381,18 +360,8 @@ function clearUI() {
   hlib.getById('actionButton').innerHTML = ''
 }
 
-// save appVars to localStorage
-
-function saveAppVar(key, value) {
-  localStorage.setItem(key, value)
-}
-
-function savePmid(pmid) {
-  saveAppVar(storageKeys.PMID, pmid)
-}
-
 function savePmidFromInput() {
-  savePmid(hlib.getById(storageKeys.PMID).value)
+  setAppVar(appStateKeys.PMID, hli.getById(appStateKeys.PMID).value)
 }
 
 // post an annotation, then trigger a state transition
@@ -400,9 +369,7 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     if (transition === 'getGene') {
-      saveAppVar(storageKeys.ARTICLE,appVars.URL)
-      saveAppVar(storageKeys.GENE, appVars.SELECTION)
-      loadAppVars()
+      setAppVar(appStateKeys.GENE, getAppVar(appStateKeys.SELECTION))
     }
     eval(`FSM.${transition}()`)
     refreshUI()
@@ -424,8 +391,8 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
     </iframe></div>`
   )
 
-  await hlib.delaySeconds(1)
-  location.href = location.href
+  await hlib.delaySeconds(2)
+  window.close()
 }
 
 function refreshUI() {
@@ -468,7 +435,7 @@ async function refreshAnnotationSummary() {
   return
   const opts = {
     method: 'GET',
-    url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE}&tags=gene:${appVars.GENE}`,
+    url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE_URL}&tags=gene:${appVars.GENE}`,
     params: {
       limit: 200
     }
@@ -476,12 +443,18 @@ async function refreshAnnotationSummary() {
   const data = await hlib.httpRequest(opts)
   const rows = JSON.parse(data.response).rows
   let output = `<p>Annotations for ${appVars.GENE}: ${rows.length}</p>`
-  rows.forEach(row =>{
+  const hpoResults = {
+    individual: [],
+    family: [],
+    group: [],
+  }
+  rows.forEach(row => {
     let anno = hlib.parseAnnotation(row)
-    output += hlib.showAnnotation(anno, 0, 'https://hypothes.is/search?q=tag:')
   })
   hlib.getById('annotations').innerHTML = output
 }
+
+// fsm 
 
 var FSM
 
@@ -504,7 +477,7 @@ function createFSM() {
         onEnterState: function(lifecycle) {
           console.log('entering', lifecycle.to);
           if (lifecycle.to !== 'needGene') {
-            localStorage.setItem(storageKeys.STATE, lifecycle.to);
+            localStorage.setItem(appStateKeys.STATE, lifecycle.to);
             app(reloadEvent)
           }
         },
@@ -515,6 +488,8 @@ function createFSM() {
 }
 
 createFSM()
+
+// main
 
 hlib.createApiTokenInputForm(hlib.getById('tokenContainer'))
 const userContainer = hlib.getById('userContainer')
