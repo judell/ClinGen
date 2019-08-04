@@ -231,12 +231,16 @@ function saveLookupAsPageNote(text, tags, transition) {
 function saveMonarchLookup() {
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
   const hpoCode = targetUri.match(/\/phenotype\/(HP.+)$/)[1]
-  const hpoTag = `hpoCode:${hpoCode}`
+  const hpoTag = `${hpoCode}`
   saveLookupAsPageNote('Monarch lookup result', ['hpoLookup', 'monarchLookup', hpoTag], 'saveMonarchLookup')
 }
 
 function saveMseqdrLookup() {
-  saveLookupAsPageNote('Mseqdr lookup result', ['hpoLookup', 'mseqdrLookup'], 'saveMseqdrLookup')
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
+  let hpoCode = targetUri.match(/\?(\d+);$/)[1]
+  while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }  
+  const hpoTag = `HP:${hpoCode}`
+  saveLookupAsPageNote('Mseqdr lookup result', ['hpoLookup', 'mseqdrLookup', hpoTag], 'saveMseqdrLookup')
 }
 
 function variantIdLookup() {
