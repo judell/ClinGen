@@ -483,25 +483,38 @@ async function refreshHpoLookupSummary() {
     return annos.filter(a => a.tags.indexOf(`phenotype:${type}`) > -1)
   }
 
-  function filterByHP(anno) {
+  function filterByHp(anno) {
     return anno.tags.filter(t => { return t.startsWith('HP:') })[0]
   }
 
-  function reportHPs(id, hps) {
+  function reportHps(id, hps) {
     hlib.getById(id).innerHTML = hps.join(', ')
   }
 
+  function linkHp(id, type) {
+    const gene = encodeURIComponent(`gene:${getAppVar(appStateKeys.GENE)}`)
+    type = encodeURIComponent(`phenotype:${type}`)
+    const text = hlib.getById(id).innerHTML
+    const link = `https://hypothes.is/search?q=tag:${gene}+tag:${type}`
+    const html = `<a target="_hpoAnnos" href="${link}">${text}</a>`
+    hlib.getById(id).innerHTML = html
+  }
+
+
   const individualAnnos = filterByType(annos, 'individual')
-  const individualHps = individualAnnos.map(a => filterByHP(a))
-  reportHPs('hpoIndividual', individualHps)
+  const individualHps = individualAnnos.map(a => filterByHp(a))
+  linkHp('hpoIndividualLabel', 'individual')
+  reportHps('hpoIndividual', individualHps)
   
   const familyAnnos = filterByType(annos, 'family')
-  const familyHps = familyAnnos.map(a => filterByHP(a))
-  reportHPs('hpoFamily', familyHps)  
+  const familyHps = familyAnnos.map(a => filterByHp(a))
+  linkHp('hpoFamilyLabel', 'family')
+  reportHps('hpoFamily', familyHps)  
 
   const groupAnnos = filterByType(annos, 'group')
-  const groupHps = groupAnnos.map(a => filterByHP(a))
-  reportHPs('hpoGroup', groupHps)  
+  const groupHps = groupAnnos.map(a => filterByHp(a))
+  linkHp('hpoGroupLabel', 'group')
+  reportHps('hpoGroup', groupHps)  
 
 }
 
