@@ -49,6 +49,11 @@ function app(event) {
 
     // remember target_uri passed in url
     setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
+
+    // intialize lookup type if not already defined
+    if (! getAppVar(appStateKeys.LOOKUP_TYPE)) {
+      setAppVar(appStateKeys.LOOKUP_TYPE, 'individual')
+    }
     
     // advance state machine to cached FSM state    
     const savedState = getAppVar(appStateKeys.STATE)
@@ -181,7 +186,7 @@ function app(event) {
   )
   } else if ( FSM.state === 'inAlleleIdLookup') {
     appendViewer(`
-      <p>Annotate the current ARTICLE_URL with a page note indicating the canonoical allele ID (${selection})?
+      <p>Annotate the current article with a page note indicating the canonical allele ID (${selection})?
       <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
       <p><button onclick="saveAlleleIdLookup()">post</button>`
     )    
@@ -193,6 +198,7 @@ function app(event) {
 // workflow functions
 
 function getGene() {
+  setAppVar(appStateKeys.GENE, getAppVar(appStateKeys.SELECTION))
   let params = getApiBaseParams()
   params.tags.push(`gene:${getAppVar(appStateKeys.GENE)}`)
   params.tags.push(`pmid:${getAppVar(appStateKeys.PMID)}`)
@@ -217,7 +223,16 @@ function mseqdrLookup() {
   window.close()
 }
 
+function addLookupTypeTag(tags) {
+  const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
+  if (lookupType) {
+    tags.push(`phenotype:${lookupType}`)
+  }
+  return tags
+}
+
 function saveLookupAsPageNote(text, tags, transition) {
+  tags = addLookupTypeTag(tags)
   const params = getApiBaseParams()
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
@@ -331,10 +346,6 @@ function saveApiParams(params) {
 
 function baseTags() {
   const tags = [appWindowName]
-  const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
-  if (lookupType) {
-    tags.push(`phenotype:${lookupType}`)
-  }
   return tags
 }
 
@@ -388,9 +399,6 @@ function savePmidFromInput() {
 async function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
-    if (transition === 'getGene') {
-      setAppVar(appStateKeys.GENE, getAppVar(appStateKeys.SELECTION))
-    }
     eval(`FSM.${transition}()`)
     refreshUI()
   }
@@ -418,7 +426,7 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 function refreshUI() {
   clearUI()
   refreshSvg()
-  refreshAnnotationSummary()
+  refreshHpoLookupSummary()
 }
 
 async function refreshSvg() {
@@ -451,27 +459,50 @@ async function refreshSvg() {
   })
 }
 
-async function refreshAnnotationSummary() {
-  return
+async function refreshHpoLookupSummary() {
+  const gene = getAppVar(appStateKeys.GENE)
+  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
   const opts = {
     method: 'GET',
-    url: `https://hypothes.is/api/search?uri=${appVars.ARTICLE_URL}&tags=gene:${appVars.GENE}`,
+    url: `https://hypothes.is/api/search?tags=gene:${gene}&tags=hpoLookup`,
     params: {
       limit: 200
     }
   }
   const data = await hlib.httpRequest(opts)
   const rows = JSON.parse(data.response).rows
-  let output = `<p>Annotations for ${appVars.GENE}: ${rows.length}</p>`
-  const hpoResults = {
+    const hpoResults = {
     individual: [],
     family: [],
     group: [],
   }
-  rows.forEach(row => {
-    let anno = hlib.parseAnnotation(row)
-  })
-  hlib.getById('annotations').innerHTML = output
+
+  const annos = rows.map(r => hlib.parseAnnotation(r))
+  
+  function filterByType(annos, type) {
+    return annos.filter(a => a.tags.indexOf(`phenotype:${type}`) > -1)
+  }
+
+  function filterByHP(anno) {
+    return anno.tags.filter(t => { return t.startsWith('HP:') })[0]
+  }
+
+  function reportHPs(id, hps) {
+    hlib.getById(id).innerHTML = hps.join(', ')
+  }
+
+  const individualAnnos = filterByType(annos, 'individual')
+  const individualHps = individualAnnos.map(a => filterByHP(a))
+  reportHPs('hpoIndividual', individualHps)
+  
+  const familyAnnos = filterByType(annos, 'family')
+  const familyHps = familyAnnos.map(a => filterByHP(a))
+  reportHPs('hpoFamily', familyHps)  
+
+  const groupAnnos = filterByType(annos, 'group')
+  const groupHps = groupAnnos.map(a => filterByHP(a))
+  reportHPs('hpoGroup', groupHps)  
+
 }
 
 // fsm 
