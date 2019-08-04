@@ -45,11 +45,12 @@ function app(event) {
 
   console.log(`app event type ${event.type}, data ${event.data}`)
 
-  if (event.type==='load') {   // advance state machine to cached FSM state
+  if (event.type==='load') {  
 
+    // remember target_uri passed in url
     setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
-    setAppVar(appStateKeys.PMID, hlib.gup('pmid'))
-
+    
+    // advance state machine to cached FSM state    
     const savedState = getAppVar(appStateKeys.STATE)
     if (savedState === 'haveGene') {
       FSM.getGene()
@@ -65,6 +66,9 @@ function app(event) {
   } else if (event.data) {
     if (! getAppVar(appStateKeys.ARTICLE_URL)) {  
       setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
+    }
+    if (! getAppVar(appStateKeys.PMID)) {
+      setAppVar(appStateKeys.PMID, event.data.pmid)
     }
     saveApiParams(event.data)  // save params for H api call
   } else if (event.type==='clearSelection') {
@@ -99,28 +103,32 @@ function app(event) {
   let lookupBoilerplate = `
     <p>
     <div>I am looking phenotypes for:
-    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('individual')} value="individual"> individual </div> 
-    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('group')}      value="group"> group </div>
-    <div><input type="radio" onchange="answer()" name="lookupType" ${isChecked('family')}     value="family"> family </div>
+    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('individual')} value="individual"> individual </div> 
+    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('group')}      value="group"> group </div>
+    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('family')}     value="family"> family </div>
     </p>
     <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
       and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>`
 
+  const geneStillSelected = ( gene === selection )
+    ? '<span style="font-size:smaller"> please try a different selection</span>' 
+    :  ''
+
   let hpoLookupBoilerplate = `
-    <li>HPO lookup for ${selection} in <a href="javascript:monarchLookup()">Monarch</a>
-    <li>HPO lookup for ${selection} in <a href="javascript:mseqdrLookup()">Mseqdr</a>`
+    <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a> ${geneStillSelected}
+    <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> ${geneStillSelected}`
 
   let variantLookupBoilerplate = `
-    <li>Variant ID lookup for ${gene} in <a href="javascript:variantIdLookup()">ClinVar</a>
-    <li>Allele identifier lookup for ${gene} in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
+    <li>Variant ID lookup for <i>${gene}</i> in <a href="javascript:variantIdLookup()">ClinVar</a>
+    <li>Allele identifier lookup for <i>${gene}</i> in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
   appendViewer(`
   <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
   <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
   <div><b>PMID</b>: <input id="pmid" value="${pmid}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
     <div><b>Gene</b>: ${gene}</div>
-    <div><b>Selection</b>: "<span class="clinGenSelection">${selection}</span>"</div>`
+    <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
   )
 
   // state-dependent messages to user
@@ -141,7 +149,9 @@ function app(event) {
       <p>Nothing is selected in the current article.
       <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} ClinGen button to save the selection and continue.
       <p>Variant ID lookups and allele lookups don't depend on a selection, so you can proceed directly with those.
-      ${variantLookupBoilerplate}`
+      <ul>
+      ${variantLookupBoilerplate}
+      </ul>`
     )
   } else if (FSM.state === 'haveGene' && selection) {
     appendViewer(`
@@ -193,6 +203,7 @@ function getGene() {
 
 function monarchLookup() {
   FSM.beginMonarchLookup()
+  const selection = getAppVar(appStateKeys.SELECTION)
   const url = `https://monarchinitiative.org/search/${selection}`
   window.open(url, 'monarchLookup')
   window.close()
@@ -200,6 +211,7 @@ function monarchLookup() {
 
 function mseqdrLookup() {
   FSM.beginMseqdrLookup()
+  const selection = getAppVar(appStateKeys.SELECTION)
   const url = `https://mseqdr.org/search_phenotype.php?hponame=${selection}&dbsource=HPO`
   window.open(url, 'mseqdrLookup')
   window.close()
@@ -207,6 +219,7 @@ function mseqdrLookup() {
 
 function saveLookupAsPageNote(text, tags, transition) {
   let params = getApiBaseParams()
+  const targetUri = params.targetUri
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
   const gene = getAppVar(appStateKeys.GENE)
   params.tags = params.tags.concat(tags, `gene:${gene}`)
@@ -361,7 +374,7 @@ function clearUI() {
 }
 
 function savePmidFromInput() {
-  setAppVar(appStateKeys.PMID, hli.getById(appStateKeys.PMID).value)
+  setAppVar(appStateKeys.PMID, hlib.getById('pmid').value)
 }
 
 // post an annotation, then trigger a state transition
