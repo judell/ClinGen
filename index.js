@@ -218,8 +218,8 @@ function mseqdrLookup() {
 }
 
 function saveLookupAsPageNote(text, tags, transition) {
-  let params = getApiBaseParams()
-  const targetUri = params.targetUri
+  const params = getApiBaseParams()
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
   const gene = getAppVar(appStateKeys.GENE)
   params.tags = params.tags.concat(tags, `gene:${gene}`)
@@ -229,7 +229,10 @@ function saveLookupAsPageNote(text, tags, transition) {
 }
 
 function saveMonarchLookup() {
-  saveLookupAsPageNote('Monarch lookup result', ['hpoLookup', 'monarchLookup'], 'saveMonarchLookup')
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
+  const hpoCode = targetUri.match(/\/phenotype\/(HP.+)$/)[1]
+  const hpoTag = `hpoCode:${hpoCode}`
+  saveLookupAsPageNote('Monarch lookup result', ['hpoLookup', 'monarchLookup', hpoTag], 'saveMonarchLookup')
 }
 
 function saveMseqdrLookup() {
