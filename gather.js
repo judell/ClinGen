@@ -115,9 +115,9 @@ function gather(testArgs) {
     <button title="Do HGVS lookup" onclick="hgvs()">HGVS</button>`
     document.body.insertBefore(activator, document.body.firstChild)
     let opener = `width=700,height=900,top=${window.screenTop},left=${window.screenLeft + window.innerWidth}`
-    //appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html`, appWindowName, opener)
     const target_uri = encodeURIComponent(location.href)
-    appWindow = window.open( `http://localhost:8001/index.html?target_uri=${target_uri}`, appWindowName, opener)
+    appWindow = window.open( `https://jonudell.info/h/ClinGen/index.html?target_uri=${target_uri}}`, appWindowName, opener)
+    //appWindow = window.open( `http://localhost:8001/index.html?target_uri=${target_uri}`, appWindowName, opener)
   } 
 
   params.target_uri = location.href
