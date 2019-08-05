@@ -427,12 +427,18 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   transit(transition)
 
   writeViewer(`<p>Annotation posted.
-    <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="400">
+    <div><iframe src="https://hypothes.is/a/${response.id}" width="350" height="300">
     </iframe></div>`
   )
 
-  await hlib.delaySeconds(2)
+  await hlib.delaySeconds(3)
+
+  if (location.href.startsWith('http://localhost')) {
+    app(reloadEvent)
+  } else {
   window.close()
+  }
+
 }
 
 function refreshUI() {
