@@ -41,7 +41,7 @@ window.addEventListener('message', function(event) {
 })
 
 // called with a load event initially, then with message events
-function app(event) {
+async function app(event) {
 
   console.log(`app event type ${event.type}, data ${event.data}`)
 
@@ -83,8 +83,10 @@ function app(event) {
   }
 
   // used only by the test harness
-  if (event.data && event.data.invoke) {  
+  if (event.data && event.data.invoke) {
+    console.log(`invoke ${JSON.stringify(event.data)}`)
     eval(event.data.invoke) 
+    await hlib.delaySeconds(3)
   }  
 
   refreshUI()
@@ -116,13 +118,9 @@ function app(event) {
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
       and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>`
 
-  const geneStillSelected = ( gene === selection )
-    ? '<span style="font-size:smaller"> please try a different selection</span>' 
-    :  ''
-
-  let hpoLookupBoilerplate = `
-    <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a> ${geneStillSelected}
-    <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> ${geneStillSelected}`
+    let hpoLookupBoilerplate = `
+    <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
+    <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
 
   let variantLookupBoilerplate = `
     <li>Variant ID lookup for <i>${gene}</i> in <a href="javascript:variantIdLookup()">ClinVar</a>
@@ -276,18 +274,26 @@ function alleleIdLookup() {
 
 async function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
   const gene = getAppVar(appStateKeys.GENE)
-  var params = getApiBaseParams() // save an anchored annotation to the lookup page
-  text = `${text} <a href="${params.targetUri}">${params.targetUri}</a>`
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
+  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
+  
+  let params = getApiBaseParams() 
+
+  text = `${text} <a href="${targetUri}">${targetUri}</a>`
   const tags = params.tags.concat([`${tag}`, `gene:${gene}`])
+
+  params.uri = targetUri
   params.text = text
   params.tags = tags
   const token = hlib.getToken()
-  let payload = hlib.createAnnotationPayload(params)
-  const data = await hlib.postAnnotation(payload, token)
-  params = getApiBaseParamsMinusSelectors() // also save a page note on the current article, so omit selectors
+  let payload = hlib.createAnnotationPayload(params) // save an anchored annotation to the lookup page
+  const data = await hlib.postAnnotation(payload, token) 
+
+  params = getApiBaseParamsMinusSelectors() 
+  params.uri = articleUrl
   params.text = text
   params.tags = tags
-  payload = hlib.createAnnotationPayload(params)
+  payload = hlib.createAnnotationPayload(params) // also save a page note on the current article, so omit selectors
   postAnnotationAndUpdateState(payload, token, transition)
   }
 
@@ -297,9 +303,14 @@ function saveVariantIdLookup() {
 
 function saveAlleleIdLookup() {
   saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
+  clearSelection()
 }
 
 // utility functions
+
+function clearSelection() {
+  setAppVar(appStateKeys.SELECTION, '')
+}
 
 function setAppVar(key, value) {
   localStorage.setItem(key, value)
@@ -412,6 +423,8 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 
   clearUI()
 
+  clearSelection()
+
   transit(transition)
 
   writeViewer(`<p>Annotation posted.
@@ -420,7 +433,7 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   )
 
   await hlib.delaySeconds(2)
-  window.close()
+  app(reloadEvent)
 }
 
 function refreshUI() {
@@ -488,7 +501,9 @@ async function refreshHpoLookupSummary() {
   }
 
   function reportHps(id, hps) {
-    hlib.getById(id).innerHTML = hps.join(', ')
+    if (hps.length) {
+      hlib.getById(id).innerHTML = hps.join(', ')
+    }
   }
 
   function linkHp(id, type) {
