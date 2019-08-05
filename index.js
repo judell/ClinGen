@@ -303,7 +303,6 @@ function saveVariantIdLookup() {
 
 function saveAlleleIdLookup() {
   saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
-  clearSelection()
 }
 
 // utility functions
@@ -433,7 +432,7 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   )
 
   await hlib.delaySeconds(2)
-  app(reloadEvent)
+  window.close()
 }
 
 function refreshUI() {

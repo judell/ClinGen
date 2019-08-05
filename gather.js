@@ -8,7 +8,7 @@ if (! appWindowName) {
 
 var appWindow
 
-let params = {}
+params = {}
 
 // when there's a selection, move the activator button to it
 document.addEventListener('mouseup', e => {
