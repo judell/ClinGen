@@ -8,6 +8,8 @@ if (! appWindowName) {
 
 var appWindow
 
+let params = {}
+
 // when there's a selection, move the activator button to it
 document.addEventListener('mouseup', e => {
   const activator = hlib.getById('activator')
@@ -44,11 +46,15 @@ function remove() {
 var intervalId = setInterval(remove, 1000)
 
 window.onbeforeunload = function() {
-  appWindow.postMessage(`Close${appWindowName}`, '*')
+  if (appWindow) {
+    appWindow.postMessage(`Close${appWindowName}`, '*')
+  }
 }
 
 window.onunload = function() {
-  appWindow.postMessage(`Close${appWindowName}`, '*')
+  if (appWindow) {
+    appWindow.postMessage(`Close${appWindowName}`, '*')
+  }
 }
 
 function hgvs() {
@@ -61,9 +67,8 @@ function gather(testArgs) {
   // always pass the url at which the bookmarklet activated
   // call it target_uri because it will be the target of annotations,
   // either on the paper being curated, or on lookup pages elsewhere, or both
-  const params = {
-    target_uri: location.href,
-  }
+
+  console.log(`gather testArgs ${JSON.stringify(testArgs)}`)
 
   const selection = document.getSelection()
   
@@ -115,10 +120,17 @@ function gather(testArgs) {
     appWindow = window.open( `http://localhost:8001/index.html?target_uri=${target_uri}`, appWindowName, opener)
   } 
 
-  if (testArgs) {
-    params = Object.assign(testArgs, params)
-  }
+  params.target_uri = location.href
 
+  if (testArgs) {
+    if (testArgs.invoke) {
+      params.invoke = testArgs.invoke
+    }
+    if (testArgs.target_uri) {
+      params.target_uri = testArgs.target_uri
+    }
+  }
+  
   console.log(`gather sending ${JSON.stringify(params)}`)
   setTimeout( function() {
     appWindow.postMessage(params, '*') // talk to the app
