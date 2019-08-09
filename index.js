@@ -14,6 +14,9 @@ const appStateKeys = {
   END: `${appWindowName}_end`,
   PMID: `${appWindowName}_pmid`,
   LOOKUP_TYPE: `${appWindowName}_lookupType`,
+  LOOKUP_INSTANCE_INDIVIDUAL: `${appWindowName}_lookupInstanceIndividual`,
+  LOOKUP_INSTANCE_FAMILY: `${appWindowName}_lookupInstanceFamily`,
+  LOOKUP_INSTANCE_GROUP: `${appWindowName}_lookupInstanceGroup`,
 }
 
 const clearSelectionEvent = {
@@ -106,22 +109,41 @@ async function app(event) {
   const selection = getAppVar(appStateKeys.SELECTION)
   const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
+  const lookupType = getLookupType()
+  const lookupInstance = getLookupInstance(lookupType)
 
   let lookupBoilerplate = `
     <p>
-    <div>I am looking phenotypes for:
-    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('individual')} value="individual"> individual </div> 
-    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('group')}      value="group"> group </div>
-    <div><input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('family')}     value="family"> family </div>
+    <div>I am looking up phenotypes for:
+    <div>
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('individual')} value="individual">
+        individual <select is="instance-selector" type="individual" count="10"></select>
+      </input>
+    </div> 
+    <div>
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('family')} value="family"> 
+        family <select is="instance-selector" type="family" count="10"></select>
+      </input>
+    </div>
+    <div>
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('group')} value="group">
+         group <select is="instance-selector" type="group" count="10"></select>
+      </input>
+    </div>
     </p>
     <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
       and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>`
 
-    let hpoLookupBoilerplate = `
-    <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
-    <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
+  let hpoLookupBoilerplate = `
+  <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
+  <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
 
+  let hpoLookupBoilerplate2 = `
+    <p>Annotate the current article with a reference to 
+    <a href="${targetUri}">${targetUri}</a> as the Monarch lookup result for "${selection}" 
+    (${lookupType} ${lookupInstance})?`
+  
   let variantLookupBoilerplate = `
     <li>Variant ID lookup for <i>${gene}</i> in <a href="javascript:variantIdLookup()">ClinVar</a>
     <li>Allele identifier lookup for <i>${gene}</i> in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
@@ -166,14 +188,12 @@ async function app(event) {
     )
   } else if ( FSM.state === 'inMonarchLookup') {
     appendViewer(`
-      <p>Annotate the current article with a reference to 
-      <a href="${targetUri}">${targetUri}</a> as the Monarch lookup result for "${selection}"?
+      ${hpoLookupBoilerplate2}
       <p><button onclick="saveMonarchLookup()">post</button>`
     )
   } else if ( FSM.state === 'inMseqdrLookup') {
     appendViewer(`
-      <p>Annotate the current article with a reference to  
-      <a href="${targetUri}">${targetUri}</a> as the Mseqdr lookup result for "${selection}"?
+      ${hpoLookupBoilerplate2}
       <p><button onclick="saveMseqdrLookup()">post</button>`
     )
   } else if ( FSM.state === 'inVariantIdLookup') {
@@ -221,16 +241,19 @@ function mseqdrLookup() {
   window.close()
 }
 
-function addLookupTypeTag(tags) {
+function addLookupTypeAndInstanceTags(tags) {
   const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
+  const instanceKey = getLookupKey(lookupType)
+  const instanceNum = localStorage.getItem(instanceKey)
   if (lookupType) {
     tags.push(`phenotype:${lookupType}`)
+    tags.push(`${lookupType}:${instanceNum}`)
   }
   return tags
 }
 
 function saveLookupAsPageNote(text, tags, transition) {
-  tags = addLookupTypeTag(tags)
+  tags = addLookupTypeAndInstanceTags(tags)
   const params = getApiBaseParams()
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
@@ -316,7 +339,8 @@ function setAppVar(key, value) {
 }
 
 function getAppVar(key) {
-  return localStorage.getItem(key)
+  const value = localStorage.getItem(key)
+  return (typeof value !== 'undefined') ? value : null
 }
 
 function setUser() {
@@ -334,6 +358,31 @@ function setLookupType() {
 function getLookupType() {
   const value = getAppVar(appStateKeys.LOOKUP_TYPE)
   return value ? value : 'individual'
+}
+
+function getLookupKey(type) {
+  let key 
+  if (type === 'individual') {
+    key = appStateKeys.LOOKUP_INSTANCE_INDIVIDUAL
+  }
+  if (type === 'family') {
+    key = appStateKeys.LOOKUP_INSTANCE_FAMILY
+  }
+  if (type === 'group') {
+    key = appStateKeys.LOOKUP_INSTANCE_GROUP    
+  }
+  return key
+}
+
+function setLookupInstance(type, num) {
+  const key = getLookupKey(type)
+  setAppVar(key, num)
+}
+
+function getLookupInstance(type) {
+  const key = getLookupKey(type)
+  const value = getAppVar(key)
+  return value ? value : '1'
 }
 
 function saveApiParams(params) {
@@ -572,6 +621,33 @@ function createFSM() {
 }
 
 createFSM()
+
+// custom elements
+
+class InstanceSelector extends HTMLSelectElement {
+  type
+  constructor() {
+    super()
+    this.type = this.getAttribute('type')
+  }
+  connectedCallback() {
+    const count = parseInt(this.getAttribute('count'))
+    let options = ''
+    const lookupInstance = parseInt(getLookupInstance(this.type))
+    for (let i = 1; i < count; i++) {
+      let selected = ( i == lookupInstance ) ? 'selected' : ''
+      options += `<option ${selected}>${i}</option>`
+    }
+    this.innerHTML = options
+    this.onchange = this.selectionChanged
+  }
+  selectionChanged() {
+    const newValue = this.options[this.selectedIndex].value
+    setLookupInstance(this.type, newValue)
+  }
+}
+customElements.define('instance-selector', InstanceSelector, { extends: "select" })
+
 
 // main
 
