@@ -117,17 +117,17 @@ async function app(event) {
     <div>I am looking up phenotypes for:
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('individual')} value="individual">
-        individual <select is="instance-selector" type="individual" count="10"></select>
+        individual <select is="integer-select" type="individual" count="10"></select>
       </input>
     </div> 
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('family')} value="family"> 
-        family <select is="instance-selector" type="family" count="10"></select>
+        family <select is="integer-select" type="family" count="10"></select>
       </input>
     </div>
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('group')} value="group">
-         group <select is="instance-selector" type="group" count="10"></select>
+         group <select is="integer-select" type="group" count="10"></select>
       </input>
     </div>
     </p>
@@ -159,7 +159,7 @@ async function app(event) {
   // state-dependent messages to user
   if ( FSM.state === 'needGene' && ! selection ) {
     appendViewer(`
-      <p>To begin (or continue) a curation, go to the window where you clicked the bookmarklet, 
+      <p>To begin (or continue)a curation, go to the window where you clicked the bookmarklet, 
       select the name of a gene, and click the ${appWindowName} button.
       </ul>`
     )
@@ -564,7 +564,12 @@ async function refreshHpoLookupSummary() {
   }
 
   function reportHpoCodes(id, hpoCodes) {
-    hlib.getById(id).innerHTML = JSON.stringify(hpoCodes, null, 2)
+    const keys = Object.keys(hpoCodes).sort()
+    let html = ''
+      for (let key of keys) {
+        html += `<div>${key} ${hpoCodes[key].join(', ')}</div>`
+    }
+    hlib.getById(id).innerHTML = html
   }
 
   function linkHpoTypes(id, type) {
@@ -630,7 +635,7 @@ createFSM()
 
 // custom elements
 
-class InstanceSelector extends HTMLSelectElement {
+class IntegerSelect extends HTMLSelectElement {
   type
   constructor() {
     super()
@@ -652,7 +657,7 @@ class InstanceSelector extends HTMLSelectElement {
     setLookupInstance(this.type, newValue)
   }
 }
-customElements.define('instance-selector', InstanceSelector, { extends: "select" })
+customElements.define('integer-select', IntegerSelect, { extends: "select" })
 
 
 // main
