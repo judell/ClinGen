@@ -159,7 +159,7 @@ async function app(event) {
   // state-dependent messages to user
   if ( FSM.state === 'needGene' && ! selection ) {
     appendViewer(`
-      <p>To begin a curation, go to the window where you clicked the bookmarklet, 
+      <p>To begin (or continue) a curation, go to the window where you clicked the bookmarklet, 
       select the name of a gene, and click the ${appWindowName} button.
       </ul>`
     )
@@ -528,7 +528,6 @@ async function refreshSvg() {
 
 async function refreshHpoLookupSummary() {
   const gene = getAppVar(appStateKeys.GENE)
-  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
   const opts = {
     method: 'GET',
     url: `https://hypothes.is/api/search?tags=gene:${gene}&tags=hpoLookup`,
@@ -546,21 +545,29 @@ async function refreshHpoLookupSummary() {
 
   const annos = rows.map(r => hlib.parseAnnotation(r))
   
-  function filterByType(annos, type) {
+  function filterAnnosByLookupType(annos, type) {
     return annos.filter(a => a.tags.indexOf(`phenotype:${type}`) > -1)
   }
 
-  function filterByHp(anno) {
-    return anno.tags.filter(t => { return t.startsWith('HP:') })[0]
-  }
-
-  function reportHps(id, hps) {
-    if (hps.length) {
-      hlib.getById(id).innerHTML = hps.join(', ')
+  function organizeHpoLookupsByInstanceType(annos, type) {
+    const hpoCodes = {}
+    for (anno of annos) {
+      const instanceTag = anno.tags.filter(t => { return t.startsWith(`${type}:`) })[0]
+      const hpoCode = anno.tags.filter(t => { return t.startsWith('HP:') })[0]
+      if (hpoCodes[instanceTag]) {
+        hpoCodes[instanceTag].push(hpoCode)
+      } else {
+        hpoCodes[instanceTag] = [hpoCode]
+      }
     }
+    return hpoCodes
   }
 
-  function linkHp(id, type) {
+  function reportHpoCodes(id, hpoCodes) {
+    hlib.getById(id).innerHTML = JSON.stringify(hpoCodes, null, 2)
+  }
+
+  function linkHpoTypes(id, type) {
     const gene = encodeURIComponent(`gene:${getAppVar(appStateKeys.GENE)}`)
     type = encodeURIComponent(`phenotype:${type}`)
     const text = hlib.getById(id).innerHTML
@@ -569,22 +576,21 @@ async function refreshHpoLookupSummary() {
     hlib.getById(id).innerHTML = html
   }
 
+  const individualAnnos = filterAnnosByLookupType(annos, 'individual')
+  const individualHpoCodes = organizeHpoLookupsByInstanceType(individualAnnos, 'individual')
+  linkHpoTypes('hpoIndividualLabel', 'individual')
+  reportHpoCodes('hpoIndividual', individualHpoCodes)
 
-  const individualAnnos = filterByType(annos, 'individual')
-  const individualHps = individualAnnos.map(a => filterByHp(a))
-  linkHp('hpoIndividualLabel', 'individual')
-  reportHps('hpoIndividual', individualHps)
+  const familyAnnos = filterAnnosByLookupType(annos, 'family')
+  const familyHpoCodes = organizeHpoLookupsByInstanceType(familyAnnos, 'family')
+  linkHpoTypes('hpoFamilyLabel', 'family')
+  reportHpoCodes('hpoFamily', familyHpoCodes)
+
+  const groupAnnos = filterAnnosByLookupType(annos, 'group')
+  const groupHpoCodes = organizeHpoLookupsByInstanceType(groupAnnos, 'group')
+  linkHpoTypes('hpoGroupLabel', 'group')
+  reportHpoCodes('hpoGroup', groupHpoCodes)  
   
-  const familyAnnos = filterByType(annos, 'family')
-  const familyHps = familyAnnos.map(a => filterByHp(a))
-  linkHp('hpoFamilyLabel', 'family')
-  reportHps('hpoFamily', familyHps)  
-
-  const groupAnnos = filterByType(annos, 'group')
-  const groupHps = groupAnnos.map(a => filterByHp(a))
-  linkHp('hpoGroupLabel', 'group')
-  reportHps('hpoGroup', groupHps)  
-
 }
 
 // fsm 
