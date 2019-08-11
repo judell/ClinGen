@@ -178,54 +178,26 @@ tests({
 				gather({ invoke: 'FSM.beginVariantIdLookup()' })
 				await hlib.delaySeconds(2)
 				assertEquals('inVariantIdLookup', localStorage[`${appWindowName}_state`])
-				assertEquals('564085', localStorage[`${appWindowName}_selection`])
-				gather({ invoke: 'saveVariantIdLookup()' })
+				gather({
+					invoke: 'saveVariantIdLookup()',
+					testUrlSuffix: '/variation/426075/'
+				})
 				await hlib.delaySeconds(2)
 				const data = await hlib.search({
 					url: testUrl,
-					tag: 'variantIdLookup',
+					tag: 'variantLookup',
 					user: testUser
 				})
 				const annos = data[0]
-				assertEquals(2, annos.length)
-				annos.forEach((anno) => {
-					assertEquals(`["${appWindowName}","variantIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
-				})
+				assertEquals(1, annos.length)
+				const anno = annos[0]
+  			assertEquals(`["${appWindowName}","variantLookup","variant:426075","gene:TMEM260"]`, JSON.stringify(anno.tags))
 				assertEquals('haveGene', localStorage[`${appWindowName}_state`])
 			}
 			resolve(runTest())
 		})
 	},
-
-	alleleIdLookupIsSuccessful: function() {
-		return new Promise((resolve) => {
-			async function runTest() {
-				let selection = window.getSelection()
-				let alleleId = hlib.getById('alleleId')
-				alleleId.style.color = 'red'
-				selection.selectAllChildren(alleleId)
-				gather({ invoke: 'FSM.beginAlleleIdLookup()' })
-				await hlib.delaySeconds(2)
-				assertEquals('inAlleleIdLookup', localStorage[`${appWindowName}_state`])
-				assertEquals('CA7200051', localStorage[`${appWindowName}_selection`])
-				gather({ invoke: 'saveAlleleIdLookup()' })
-				await hlib.delaySeconds(2)
-				const data = await hlib.search({
-					url: testUrl,
-					tag: 'alleleIdLookup',
-					user: testUser
-				})
-				const annos = data[0]
-				assertEquals(2, annos.length)
-				annos.forEach((anno) => {
-					assertEquals(`["${appWindowName}","alleleIdLookup","gene:TMEM260"]`, JSON.stringify(anno.tags))
-				})
-				assertEquals('haveGene', localStorage[`${appWindowName}_state`])
-			}
-			resolve(runTest())
-		})
-	},
-
+  
   cleanup: function() {
     return new Promise (resolve => {
       async function worker() {
@@ -235,5 +207,6 @@ tests({
       worker()
       })
     },  
+
 
 })
