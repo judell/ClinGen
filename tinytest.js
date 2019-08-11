@@ -11,23 +11,12 @@ const testUser = 'judell'
 
 const testUrl = 'http://localhost:8001/test.html'
 
-const testMonarchTargetUri = 'http://localhost:8001/test.html/phenotype/HP:0001660'
-
 function log(msg) {
 	document.getElementById('log').innerHTML += `<div>${msg}</div>`
 }
 
 function logError(msg) {
 	document.getElementById('log').innerHTML += `<div style="background-color:${red}">${msg}</div>`
-}
-
-function clearLocalStorage() {
-	let keys = Object.keys(localStorage).filter((key) => {
-		return key.startsWith(appWindowName)
-	})
-	keys.forEach((key) => {
-		delete localStorage[key]
-	})
 }
 
 async function cleanup() {
@@ -50,7 +39,9 @@ async function cleanup() {
 
 const TinyTest = {
 	run: async function(tests) {
-		clearLocalStorage()
+
+		await hlib.delaySeconds(3)
+		gather({ invoke: 'resetWorkflow()' })
 
 		const testNames = Object.keys(tests)
 
@@ -145,7 +136,6 @@ tests({
 	monarchLookupIsSuccessful: function() {
 		return new Promise((resolve) => {
 			async function runTest() {
-				const targetUri = 'http://localhost:8001/test.html/phenotype/HP:0001660'
 				let selection = window.getSelection()
 				let hpoLookupTerm = hlib.getById('hpoLookupTerm')
 				hpoLookupTerm.style.color = 'red'
@@ -157,20 +147,19 @@ tests({
 				await hlib.delaySeconds(3)
 				assertEquals('inMonarchLookup', localStorage[`${appWindowName}_state`])
 				assertEquals('truncus arteriosus', localStorage[`${appWindowName}_selection`])
-				gather({ 
+				gather({
 					invoke: 'saveMonarchLookup()',
-					target_uri: testMonarchTargetUri
+					testUrlSuffix: 'phenotype/HP:0001660'
 				})
 				await hlib.delaySeconds(3)
 				const data = await hlib.search({
 					tag: 'monarchLookup',
-					user: testUser,
-					uri: testMonarchTargetUri
+					user: testUser
 				})
 				const annos = data[0]
 				assertEquals(1, annos.length)
 				assertEquals(
-					`["${appWindowName}","hpoLookup","monarchLookup","HP:0001660","phenotype:individual","gene:TMEM260"]`,
+					`["${appWindowName}","hpoLookup","monarchLookup","HP:0001660","phenotype:individual","individual:1","gene:TMEM260"]`,
 					JSON.stringify(annos[0].tags)
 				)
 				assertEquals('haveGene', localStorage[`${appWindowName}_state`])
@@ -235,7 +224,7 @@ tests({
 			}
 			resolve(runTest())
 		})
-  },
+	},
 
   cleanup: function() {
     return new Promise (resolve => {
