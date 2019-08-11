@@ -442,11 +442,11 @@ function getApiBaseParams() {
   return {
     group: hypothesisGroup,
     uri: getAppVar(appStateKeys.TARGET_URI),
+    tags: baseTags(),
     exact: getAppVar(appStateKeys.SELECTION),
     prefix: getAppVar(appStateKeys.PREFIX),
     start: getAppVar(appStateKeys.START),
-    end: getAppVar(appStateKeys.END),
-    tags: baseTags()
+    end: getAppVar(appStateKeys.END)
     }
 }
 
@@ -467,7 +467,7 @@ function resetWorkflow() {
       setAppVar(key, '1')
     }
   }
-location.href = location.href
+  location.href = location.href
 }
 
 function appendViewer(str) {
@@ -610,20 +610,16 @@ async function refreshHpoLookupSummary() {
     hlib.getById(id).innerHTML = html
   }
 
-  const individualAnnos = filterAnnosByLookupType(annos, 'individual')
-  const individualHpoCodes = organizeHpoLookupsByInstanceType(individualAnnos, 'individual')
-  linkHpoTypes('hpoIndividualLabel', 'individual')
-  reportHpoCodes('hpoIndividual', individualHpoCodes)
+  function reportHpoCluster(annos, type, linkId, clusterId) {
+    const clusterAnnos = filterAnnosByLookupType(annos, type)
+    const hpoCodes = organizeHpoLookupsByInstanceType(clusterAnnos, type)
+    linkHpoTypes(linkId, type)
+    reportHpoCodes(clusterId, hpoCodes)
+  }
 
-  const familyAnnos = filterAnnosByLookupType(annos, 'family')
-  const familyHpoCodes = organizeHpoLookupsByInstanceType(familyAnnos, 'family')
-  linkHpoTypes('hpoFamilyLabel', 'family')
-  reportHpoCodes('hpoFamily', familyHpoCodes)
-
-  const groupAnnos = filterAnnosByLookupType(annos, 'group')
-  const groupHpoCodes = organizeHpoLookupsByInstanceType(groupAnnos, 'group')
-  linkHpoTypes('hpoGroupLabel', 'group')
-  reportHpoCodes('hpoGroup', groupHpoCodes)  
+  reportHpoCluster(annos, 'individual', 'hpoIndividualLabel', 'hpoIndividual')
+  reportHpoCluster(annos, 'family', 'hpoFamilyLabel', 'hpoFamily')
+  reportHpoCluster(annos, 'group', 'hpoGroupLabel', 'hpoGroup')
   
 }
 
@@ -696,7 +692,7 @@ const userContainer = hlib.getById('userContainer')
 hlib.createFacetInputForm(userContainer, 'Hypothesis username matching API token')
 userInput = userContainer.querySelector('input')
 userInput.value = localStorage.getItem('h_user')
-userInput.setAttribute('onchange', 'setUser()')
+userInput.onchange = setUser
 
 window.onload = app({advanceToSavedState: true})
 
