@@ -67,7 +67,12 @@ async function app(event) {
     // used only by the test harness    
     if (event.data.invoke) { 
       console.log(`invoke ${JSON.stringify(event.data)}`)
+      const url = location.href
+      if (event.data.testUrlSuffix) {
+        history.pushState(null, '', `${url}/${event.data.testUrlSuffix}`)
+      }
       eval(event.data.invoke) 
+      history.pushState(null, '', url)
       await hlib.delaySeconds(3)
     }
   }
