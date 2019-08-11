@@ -16,6 +16,7 @@ a {
   font-family: Raleway;
   word-break: break-word;
   margin-top:.25in;
+  font-size: smaller;
  }  
  div.inspector {
   white-space: pre;
@@ -25,7 +26,7 @@ a {
    margin-bottom: 1em;
  }
  svg {
-   width: 90%;
+   width: 80%;
    height: auto;
  }
  ul {
@@ -63,19 +64,20 @@ a {
 
 <div id="graph"></div>
 
-<h2>HPO summary</h2>
+<h2>hpo summary</h2>
 
 <p id="hpoIndividualLabel">Individual</p>
-
 <div id="hpoIndividual"></div>
-
 <p id="hpoFamilyLabel">Family</p>
-
 <div id="hpoFamily"></div>
-
 <p id="hpoGroupLabel">Group</p>
-
 <div id="hpoGroup"></div>
+
+<h2><span id="variantIdLookup"></span></h2>
+
+<h2><span id="alleleIdLookup"></span></h2>
+
+<hr>
 
 <p>
   <button title="start a new gene curation" onclick="resetWorkflow()" class="resetButton">reset</button>
