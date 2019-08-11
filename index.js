@@ -19,69 +19,63 @@ const appStateKeys = {
   LOOKUP_INSTANCE_GROUP: `${appWindowName}_lookupInstanceGroup`,
 }
 
-const clearSelectionEvent = {
-  type: "clearSelection"
-}
-
-const reloadEvent = {
-  type: "reload"
-}
-
 // just public for now, can swap in the group picker as/when needed
 const hypothesisGroup = '__world__'
 
 // listen for messages from the host
 window.addEventListener('message', function(event) {
-  console.log(`listener event ${JSON.stringify(event)}`)
-  if ( event.data === 'clearSelection' ) {
-    setAppVar(appStateKeys.SELECTION, '')
-    app(clearSelectionEvent)
-  } else if ( event.data === `Close${appWindowName}` ) {
+  if ( event.data === `Close${appWindowName}` ) {
     window.close()
   } else if (event.data.tags && event.data.tags.indexOf(appWindowName) != -1) { 
     app(event)
   } 
 })
 
-// called with a load event initially, then with message events
 async function app(event) {
 
-  // handle the load event
-  if (event.type==='load') {
+  console.log(event)
 
+  if (event.advanceToSavedState) {
     advanceToSavedState()
+  }
   
-    // remember target_uri passed in url
-    setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
+  // remember target_uri passed in url
+  setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
 
-    // intialize lookup type if not already defined
-    if (! getAppVar(appStateKeys.LOOKUP_TYPE)) {
-      setAppVar(appStateKeys.LOOKUP_TYPE, 'individual')
-    }
-   
-    if (event.data) {
-      saveApiParams(event.data)  // save params for H api call
-      if (! getAppVar(appStateKeys.ARTICLE_URL)) {  
-        setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
-      }
-      if (! getAppVar(appStateKeys.PMID)) {
-        setAppVar(appStateKeys.PMID, event.data.pmid)
-      }
-    }    
-
+  // remember the selection if passed in event.data
+  if (event.data && event.data.hasOwnProperty('selection')) {
+    setAppVar(appStateKeys.SELECTION, event.data.selection)
   }
 
-  // used only by the test harness
-  if (event.data && event.data.invoke) {
-    console.log(`invoke ${JSON.stringify(event.data)}`)
-    eval(event.data.invoke) 
-    await hlib.delaySeconds(3)
-  }  
+  // intialize appvars not already defined
+  if (! getAppVar(appStateKeys.LOOKUP_TYPE)) {
+    setAppVar(appStateKeys.LOOKUP_TYPE, 'individual')
+  }
+
+  if (event.data) {
+    saveApiParams(event.data)   // save params for H api call 
+   
+    // when target_uri is a message param, it represents the article url
+    if (! getAppVar(appStateKeys.ARTICLE_URL && event.data.target_uri)) { 
+      setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
+    }
+
+    // set pmid if passed in event data
+    if (! getAppVar(appStateKeys.PMID && event.data.pmid)) {
+      setAppVar(appStateKeys.PMID, event.data.pmid)
+    }
+    // used only by the test harness    
+    if (event.data.invoke) { 
+      console.log(`invoke ${JSON.stringify(event.data)}`)
+      eval(event.data.invoke) 
+      await hlib.delaySeconds(3)
+    }
+  }
+
 
   refreshUI()
 
   // app window is open, handle messages
-
   const gene = getAppVar(appStateKeys.GENE)
   const pmid = getAppVar(appStateKeys.PMID)
   const selection = getAppVar(appStateKeys.SELECTION)
@@ -89,7 +83,6 @@ async function app(event) {
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
   const lookupType = getLookupType()
   const lookupInstance = getLookupInstance(lookupType)
-
   const lookupTemplate = `
     <p>
     <div>I am looking up phenotypes for:
@@ -120,7 +113,7 @@ async function app(event) {
 
   const hpoLookupTemplate2 = `
     <p>Annotate the current article with a reference to 
-    <a href="${targetUri}">${targetUri}</a> as the Monarch lookup result for "${selection}" 
+    <a href="${targetUri}">${targetUri}</a> as the lookup result for "${selection}" 
     (${lookupType} ${lookupInstance})?`
   
   const variantLookupTemplate = `
@@ -130,18 +123,17 @@ async function app(event) {
   const contextTemplate = `
     <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
     <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
-    <div><b>PMID</b>: <input id="pmid" value="${pmid}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
-      <div><b>Gene</b>: ${gene}</div>
-      <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
+    <div><b>PMID</b>: ${pmid}</div>
+    <div><b>Gene</b>: ${gene}</div>
+    <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
     
   appendViewer(contextTemplate)      
-  
   expressStateToUX();
   
   function expressStateToUX() {
     if (FSM.state === 'needGene' && !selection) {
       appendViewer(`
-      <p>To begin (or continue)a curation, go to the window where you clicked the bookmarklet, 
+      <p>To begin (or continue) a curation, go to the window where you clicked the bookmarklet, 
       select the name of a gene, and click the ${appWindowName} button.
       </ul>`);
     }
@@ -226,6 +218,7 @@ function getGene() {
   postAnnotationAndUpdateState(payload, token, 'getGene')
 }
 
+// lookup initiators
 function monarchLookup() {
   FSM.beginMonarchLookup()
   const selection = getAppVar(appStateKeys.SELECTION)
@@ -240,44 +233,6 @@ function mseqdrLookup() {
   const url = `https://mseqdr.org/search_phenotype.php?hponame=${selection}&dbsource=HPO`
   window.open(url, 'mseqdrLookup')
   window.close()
-}
-
-function addLookupTypeAndInstanceTags(tags) {
-  const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
-  const instanceKey = getLookupKey(lookupType)
-  const instanceNum = localStorage.getItem(instanceKey)
-  if (lookupType) {
-    tags.push(`phenotype:${lookupType}`)
-    tags.push(`${lookupType}:${instanceNum}`)
-  }
-  return tags
-}
-
-function saveLookupAsPageNote(text, tags, transition) {
-  tags = addLookupTypeAndInstanceTags(tags)
-  const params = getApiBaseParams()
-  const targetUri = getAppVar(appStateKeys.TARGET_URI)
-  params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
-  const gene = getAppVar(appStateKeys.GENE)
-  params.tags = params.tags.concat(tags, `gene:${gene}`)
-  const payload = hlib.createAnnotationPayload(params)
-  const token = hlib.getToken()
-  postAnnotationAndUpdateState(payload, token, transition)
-}
-
-function saveMonarchLookup() {
-  const targetUri = getAppVar(appStateKeys.TARGET_URI)
-  const hpoCode = targetUri.match(/\/phenotype\/(HP.+)$/)[1]
-  const hpoTag = `${hpoCode}`
-  saveLookupAsPageNote('Monarch lookup result', ['hpoLookup', 'monarchLookup', hpoTag], 'saveMonarchLookup')
-}
-
-function saveMseqdrLookup() {
-  const targetUri = getAppVar(appStateKeys.TARGET_URI)
-  let hpoCode = targetUri.match(/\?(\d+);$/)[1]
-  while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }  
-  const hpoTag = `HP:${hpoCode}`
-  saveLookupAsPageNote('Mseqdr lookup result', ['hpoLookup', 'mseqdrLookup', hpoTag], 'saveMseqdrLookup')
 }
 
 function variantIdLookup() {
@@ -296,23 +251,78 @@ function alleleIdLookup() {
   window.close()
 }
 
-async function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
+// lookup savers
+
+function saveMonarchLookup() {
+  const here = decodeURIComponent(location.href)
+  const match = here.match(/\/phenotype\/(HP.+)$/)
+  if (!match) {
+    alert('url does not match "phenotype/HP*"')
+    return
+  }
+  const hpoCode = match[1]
+  const text = 'Monarch lookup result'
+  const tags = ['hpoLookup', 'monarchLookup', hpoCode]
+  const transition = 'saveMonarchLookup'
+  // save an anchored annotation on the article
+  saveLookup(text, tags, transition, getAppVar(appStateKeys.ARTICLE_URL), true)
+}
+
+function saveMseqdrLookup() {
+  const here = decodeURIComponent(location.href)
+  const match = here.match(/hpo_browser.php\?(\d+);$/)
+  if (!match) {
+    alert('url does not match "hpo_browser.php/*"')
+    return
+  }
+  let hpoCode = match[1]
+  while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }
+  hpoCode = `HP:${hpoCode}`
+  const text = 'Mseqdr lookup result'
+  const tags = ['hpoLookup', 'mseqdrLookup', hpoCode]
+  const transition = 'saveMseqdrLookup'
+  // save an anchored annotation on the article
+  saveLookup(text, tags, transition, getAppVar(appStateKeys.ARTICLE_URL), true)
+}
+
+function saveVariantIdLookup() {
+  const targetUri = getAppVar(appStateKeys.TARGET_URI)
+  let variantId = targetUri.match(/\?(\d+);$/)[1]
+  while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }  
+  const hpoTag = `HP:${hpoCode}`
+}
+
+function saveAlleleIdLookup() {
+}
+
+// utility functions
+
+function saveLookup(text, tags, transition, targetUri, anchored) {
+  tags = addLookupTypeAndInstanceTags(tags)
+  const params = anchored ? getApiBaseParams() : getApiBaseParamsMinusSelectors()
+  params.uri = targetUri
+  params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
+  const gene = getAppVar(appStateKeys.GENE)
+  params.tags = params.tags.concat(tags, `gene:${gene}`)
+  const payload = hlib.createAnnotationPayload(params)
+  const token = hlib.getToken()
+  postAnnotationAndUpdateState(payload, token, transition)
+}
+
+/*
+async function saveLookupAsAnnotationOnLookupPageAndArticlePage(text, tag, transition ) {
   const gene = getAppVar(appStateKeys.GENE)
   const targetUri = getAppVar(appStateKeys.TARGET_URI)
   const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
-  
   let params = getApiBaseParams() 
-
   text = `${text} <a href="${targetUri}">${targetUri}</a>`
   const tags = params.tags.concat([`${tag}`, `gene:${gene}`])
-
   params.uri = targetUri
   params.text = text
   params.tags = tags
   const token = hlib.getToken()
   let payload = hlib.createAnnotationPayload(params) // save an anchored annotation to the lookup page
-  const data = await hlib.postAnnotation(payload, token) 
-
+  await hlib.postAnnotation(payload, token)
   params = getApiBaseParamsMinusSelectors() 
   params.uri = articleUrl
   params.text = text
@@ -320,16 +330,21 @@ async function saveLookupAsPageNoteAndAnnotation(text, tag, transition ) {
   payload = hlib.createAnnotationPayload(params) // also save a page note on the current article, so omit selectors
   postAnnotationAndUpdateState(payload, token, transition)
   }
+*/  
 
-function saveVariantIdLookup() {
-  saveLookupAsPageNoteAndAnnotation('ClinVar variant ID lookup result', 'variantIdLookup', 'saveVariantIdLookup')
+
+
+
+  function addLookupTypeAndInstanceTags(tags) {
+  const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
+  const instanceKey = getLookupKey(lookupType)
+  const instanceNum = localStorage.getItem(instanceKey)
+  if (lookupType) {
+    tags.push(`phenotype:${lookupType}`)
+    tags.push(`${lookupType}:${instanceNum}`)
+  }
+  return tags
 }
-
-function saveAlleleIdLookup() {
-  saveLookupAsPageNoteAndAnnotation('ClinGen allele ID lookup result', 'alleleIdLookup', 'saveAlleleIdLookup')
-}
-
-// utility functions
 
 function lookupTypeIsChecked(value) {
   if ( getLookupType() === value ) {
@@ -338,7 +353,6 @@ function lookupTypeIsChecked(value) {
     return ''
   }
 }
-
 
 function clearSelection() {
   setAppVar(appStateKeys.SELECTION, '')
@@ -441,10 +455,14 @@ function getApiBaseParamsMinusSelectors() {
 }
 
 function resetWorkflow() {
-  Object.values(appStateKeys).forEach(storageKey => {
-    delete localStorage[storageKey]
-  });
-  location.href = location.href
+  const keys = Object.values(appStateKeys)
+  for (let key of keys) {
+    delete localStorage[key]
+    if (key.indexOf('lookupInstance') != -1) {
+      setAppVar(key, '1')
+    }
+  }
+location.href = location.href
 }
 
 function appendViewer(str) {
@@ -458,10 +476,6 @@ function writeViewer(str) {
 function clearUI() {
   hlib.getById('viewer').innerHTML = ''
   hlib.getById('actionButton').innerHTML = ''
-}
-
-function savePmidFromInput() {
-  setAppVar(appStateKeys.PMID, hlib.getById('pmid').value)
 }
 
 // post an annotation, then trigger a state transition
@@ -493,7 +507,7 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   await hlib.delaySeconds(3)
 
   if (location.href.startsWith('http://localhost')) {
-    app(reloadEvent)
+    app({advanceToSavedState:false})
   } else {
   window.close()
   }
@@ -629,10 +643,10 @@ function createFSM() {
       ],
       methods: {
         onEnterState: function(lifecycle) {
-          console.log('entering', lifecycle.to);
+          console.log('entering', lifecycle.to)
           if (lifecycle.to !== 'needGene') {
-            localStorage.setItem(appStateKeys.STATE, lifecycle.to);
-            app(reloadEvent)
+            localStorage.setItem(appStateKeys.STATE, lifecycle.to)
+            app({advanceToSavedState:false})
           }
         },
       }
@@ -679,5 +693,6 @@ userInput = userContainer.querySelector('input')
 userInput.value = localStorage.getItem('h_user')
 userInput.setAttribute('onchange', 'setUser()')
 
-window.onload = app
+window.onload = app({advanceToSavedState: true})
+
 
