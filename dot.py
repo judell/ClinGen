@@ -1,5 +1,6 @@
 ﻿import urlparse
 import logging
+import os
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from pyramid.response import FileResponse
@@ -14,19 +15,23 @@ console = logging.StreamHandler()
 console.setLevel(logging.DEBUG)
 logger.addHandler(console)
 
-server_scheme = 'https'
+server_scheme = 'http'
 server_host = 'h.jonudell.info'
-server_port = None
+server_port = 5050
 
 def serve_file(path=None, file=None, request=None, content_type=None):
     response = FileResponse('%s/%s' % (path, file),
                             request=request,
                             content_type=content_type)
+    response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 @view_config( route_name='dot' )
 def dot(request):
-    return serve_file('.', 'fsm.svg', request, 'text/xml')
+    with open('fsm.dot','w') as fsm:
+      fsm.write(request.body)
+    os.system('dot -Nfontname="Raleway" -Efontname="Raleway" -Tsvg fsm.dot > fsm.svg')
+    return serve_file('.', 'fsm.svg', request, 'image/svg+xml')
 
 from wsgiref.simple_server import make_server
 from pyramid.config import Configurator
