@@ -167,25 +167,25 @@ async function app(event) {
     }
     else if (FSM.state === 'inMonarchLookup') {
       appendViewer(`
-      ${hpoLookupTemplate2}
-      <p><button onclick="saveMonarchLookup()">post</button>`);
+        ${hpoLookupTemplate2}
+        <p><button onclick="saveMonarchLookup()">post</button>`);
     }
     else if (FSM.state === 'inMseqdrLookup') {
       appendViewer(`
-      ${hpoLookupTemplate2}
-      <p><button onclick="saveMseqdrLookup()">post</button>`);
+        ${hpoLookupTemplate2}
+        <p><button onclick="saveMseqdrLookup()">post</button>`);
     }
     else if (FSM.state === 'inVariantIdLookup') {
       appendViewer(`
-    <p>Annotate the current article with a page note indicating the variant ID (${selection})?
-    <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
-    <p><button onclick="saveVariantIdLookup()">post</button>`);
+        <p>Annotate the current article with a page note indicating the variant ID 
+        ${extractVariantFromUrl(getAppVar(appStateKeys.TARGET_URI))}?
+        <p><button onclick="saveVariantIdLookup()">post</button>`);
     }
     else if (FSM.state === 'inAlleleIdLookup') {
       appendViewer(`
-      <p>Annotate the current article with a page note indicating the canonical allele ID (${selection})?
-      <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
-      <p><button onclick="saveAlleleIdLookup()">post</button>`);
+        <p>Annotate the current article with a page note indicating the canonical allele ID 
+        ${extractAlleleFromUrl(getAppVar(appStateKeys.TARGET_URI))}?
+        <p><button onclick="saveAlleleIdLookup()">post</button>`);
     }
     else {
       console.log('unexpected state', FSM.state);
@@ -291,19 +291,64 @@ function saveMseqdrLookup() {
 }
 
 function saveVariantIdLookup() {
-  const targetUri = getAppVar(appStateKeys.TARGET_URI)
-  let variantId = targetUri.match(/\?(\d+);$/)[1]
-  while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }  
-  const hpoTag = `HP:${hpoCode}`
+  const variantId = extractVariantFromUrl(location.href);
+  if (variantId === 'notFound') {
+    alert('url does not match "variation/*"')
+    return
+  }
+  const text = 'variant id lookup result'
+  const tags = ['variantLookup', `variant:${variantId}`]
+  const transition = 'saveVariantIdLookup'
+  // save a page note on the article
+  saveLookup(text, tags, transition, getAppVar(appStateKeys.ARTICLE_URL), false)
 }
 
 function saveAlleleIdLookup() {
+  const alleleId = extractAlleleFromUrl(location.href);
+  if (alleleId === 'notFound') {
+    alert('url does not match "caid=CA*"')
+    return
+  }
+  const text = 'allele id lookup result'
+  const tags = ['alleleLookup', `allele:${alleleId}`]
+  const transition = 'saveAlleleIdLookup'
+  // save a page note on the article
+  saveLookup(text, tags, transition, getAppVar(appStateKeys.ARTICLE_URL), false)
 }
 
 // utility functions
 
+function extractVariantFromUrl(url) {
+  url = decodeURIComponent(url)
+  const match = url.match(/variation\/(\d+)/)
+  return match ? match[1] : 'notFound'
+}
+
+function extractAlleleFromUrl(url) {
+  url = decodeURIComponent(url)
+  const match = url.match(/caid=(CA\d+)/)
+  return match ? match[1] : 'notFound'
+}
+
+async function searchAnnotationsByTag(tag) {
+  const gene = getAppVar(appStateKeys.GENE)
+  const opts = {
+    method: 'GET',
+    url: `https://hypothes.is/api/search?tags=gene:${gene}&tags=${tag}`,
+    params: {
+      limit: 200
+    }
+  };
+  const data = await hlib.httpRequest(opts);
+  const rows = JSON.parse(data.response).rows;
+  const annos = rows.map(r => hlib.parseAnnotation(r));
+  return annos;
+}
+
 function saveLookup(text, tags, transition, targetUri, anchored) {
-  tags = addLookupTypeAndInstanceTags(tags)
+  if (tags.indexOf('hpoLookup') != -1) {
+    tags = addLookupTypeAndInstanceTags(tags)
+  }
   const params = anchored ? getApiBaseParams() : getApiBaseParamsMinusSelectors()
   params.uri = targetUri
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
@@ -314,33 +359,7 @@ function saveLookup(text, tags, transition, targetUri, anchored) {
   postAnnotationAndUpdateState(payload, token, transition)
 }
 
-/*
-async function saveLookupAsAnnotationOnLookupPageAndArticlePage(text, tag, transition ) {
-  const gene = getAppVar(appStateKeys.GENE)
-  const targetUri = getAppVar(appStateKeys.TARGET_URI)
-  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
-  let params = getApiBaseParams() 
-  text = `${text} <a href="${targetUri}">${targetUri}</a>`
-  const tags = params.tags.concat([`${tag}`, `gene:${gene}`])
-  params.uri = targetUri
-  params.text = text
-  params.tags = tags
-  const token = hlib.getToken()
-  let payload = hlib.createAnnotationPayload(params) // save an anchored annotation to the lookup page
-  await hlib.postAnnotation(payload, token)
-  params = getApiBaseParamsMinusSelectors() 
-  params.uri = articleUrl
-  params.text = text
-  params.tags = tags
-  payload = hlib.createAnnotationPayload(params) // also save a page note on the current article, so omit selectors
-  postAnnotationAndUpdateState(payload, token, transition)
-  }
-*/  
-
-
-
-
-  function addLookupTypeAndInstanceTags(tags) {
+function addLookupTypeAndInstanceTags(tags) {
   const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
   const instanceKey = getLookupKey(lookupType)
   const instanceNum = localStorage.getItem(instanceKey)
@@ -522,7 +541,9 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 function refreshUI() {
   clearUI()
   refreshSvg()
-  refreshHpoLookupSummary()
+  reportHpoClusters()
+  reportVariantIdLookup()
+  reportAlleleIdLookup()
 }
 
 async function refreshSvg() {
@@ -555,19 +576,8 @@ async function refreshSvg() {
   })
 }
 
-async function refreshHpoLookupSummary() {
-  const gene = getAppVar(appStateKeys.GENE)
-  const opts = {
-    method: 'GET',
-    url: `https://hypothes.is/api/search?tags=gene:${gene}&tags=hpoLookup`,
-    params: {
-      limit: 200
-    }
-  }
-  const data = await hlib.httpRequest(opts)
-  const rows = JSON.parse(data.response).rows
-
-  const annos = rows.map(r => hlib.parseAnnotation(r))
+async function reportHpoClusters() {
+  const annos = await searchAnnotationsByTag('hpoLookup');
   
   function filterAnnosByLookupType(annos, type) {
     return annos.filter(a => a.tags.indexOf(`phenotype:${type}`) > -1)
@@ -615,8 +625,27 @@ async function refreshHpoLookupSummary() {
   reportHpoCluster(annos, 'individual', 'hpoIndividualLabel', 'hpoIndividual')
   reportHpoCluster(annos, 'family', 'hpoFamilyLabel', 'hpoFamily')
   reportHpoCluster(annos, 'group', 'hpoGroupLabel', 'hpoGroup')
-  
 }
+
+async function reportVariantOrIdLookup(id, tag, namespace) {
+  let annos = await searchAnnotationsByTag(tag)
+  let variantId = ''
+  annos = annos.filter(a => a.tags.indexOf(tag) > -1)
+  if (annos.length) {
+    let anno = annos[0]
+    variantId = anno.tags.filter(t => t.startsWith(namespace))
+  }
+  hlib.getById(id).innerHTML = variantId
+}
+
+function reportVariantIdLookup() {
+  reportVariantOrIdLookup('variantIdLookup', 'variantLookup', 'variant:')
+}
+
+function reportAlleleIdLookup() {
+  reportVariantOrIdLookup('alleleIdLookup', 'alleleLookup', 'allele:')
+}
+
 
 // fsm 
 
