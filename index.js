@@ -566,11 +566,6 @@ async function refreshHpoLookupSummary() {
   }
   const data = await hlib.httpRequest(opts)
   const rows = JSON.parse(data.response).rows
-    const hpoResults = {
-    individual: [],
-    family: [],
-    group: [],
-  }
 
   const annos = rows.map(r => hlib.parseAnnotation(r))
   
