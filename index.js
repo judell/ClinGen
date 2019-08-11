@@ -46,10 +46,11 @@ window.addEventListener('message', function(event) {
 // called with a load event initially, then with message events
 async function app(event) {
 
-  console.log(`app event type ${event.type}, data ${event.data}`)
+  // handle the load event
+  if (event.type==='load') {
 
-  if (event.type==='load') {  
-
+    advanceToSavedState()
+  
     // remember target_uri passed in url
     setAppVar(appStateKeys.TARGET_URI, decodeURIComponent(hlib.gup('target_uri')))
 
@@ -57,32 +58,17 @@ async function app(event) {
     if (! getAppVar(appStateKeys.LOOKUP_TYPE)) {
       setAppVar(appStateKeys.LOOKUP_TYPE, 'individual')
     }
-    
-    // advance state machine to cached FSM state    
-    const savedState = getAppVar(appStateKeys.STATE)
-    if (savedState === 'haveGene') {
-      FSM.getGene()
-    } else if (savedState === 'inMonarchLookup') {
-      FSM.getGene(); FSM.beginMonarchLookup()
-    } else if (savedState === 'inMseqdrLookup') {
-      FSM.getGene(); FSM.beginMseqdrLookup()
-    } else if (savedState === 'inVariantIdLookup') {
-      FSM.getGene(); FSM.beginVariantIdLookup()
-    } else if (savedState === 'inAlleleIdLookup') {
-      FSM.getGene(); FSM.beginAlleleIdLookup()
-    }
-  } else if (event.data) {
-    if (! getAppVar(appStateKeys.ARTICLE_URL)) {  
-      setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
-    }
-    if (! getAppVar(appStateKeys.PMID)) {
-      setAppVar(appStateKeys.PMID, event.data.pmid)
-    }
-    saveApiParams(event.data)  // save params for H api call
-  } else if (event.type==='clearSelection') {
-  // nothing specific to do here, just need a repaint
-  } else if (event.type==='reload') {
-  // just repaint
+   
+    if (event.data) {
+      saveApiParams(event.data)  // save params for H api call
+      if (! getAppVar(appStateKeys.ARTICLE_URL)) {  
+        setAppVar(appStateKeys.ARTICLE_URL, event.data.target_uri)
+      }
+      if (! getAppVar(appStateKeys.PMID)) {
+        setAppVar(appStateKeys.PMID, event.data.pmid)
+      }
+    }    
+
   }
 
   // used only by the test harness
@@ -96,14 +82,6 @@ async function app(event) {
 
   // app window is open, handle messages
 
-  function isChecked(value) {
-    if ( getLookupType() === value ) {
-      return ' checked '
-    } else {
-      return ''
-    }
-  }
-
   const gene = getAppVar(appStateKeys.GENE)
   const pmid = getAppVar(appStateKeys.PMID)
   const selection = getAppVar(appStateKeys.SELECTION)
@@ -112,108 +90,131 @@ async function app(event) {
   const lookupType = getLookupType()
   const lookupInstance = getLookupInstance(lookupType)
 
-  let lookupBoilerplate = `
+  const lookupTemplate = `
     <p>
     <div>I am looking up phenotypes for:
     <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('individual')} value="individual">
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('individual')} value="individual">
         individual <select is="integer-select" type="individual" count="10"></select>
       </input>
     </div> 
     <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('family')} value="family"> 
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('family')} value="family"> 
         family <select is="integer-select" type="family" count="10"></select>
       </input>
     </div>
     <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${isChecked('group')} value="group">
+      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('group')} value="group">
          group <select is="integer-select" type="group" count="10"></select>
       </input>
     </div>
     </p>
-    <p>You're ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
+    <p>Ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
-      and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>`
+      and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>.
+    `
 
-  let hpoLookupBoilerplate = `
-  <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
-  <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
+  const hpoLookupTemplate = `
+    <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
+    <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
 
-  let hpoLookupBoilerplate2 = `
+  const hpoLookupTemplate2 = `
     <p>Annotate the current article with a reference to 
     <a href="${targetUri}">${targetUri}</a> as the Monarch lookup result for "${selection}" 
     (${lookupType} ${lookupInstance})?`
   
-  let variantLookupBoilerplate = `
+  const variantLookupTemplate = `
     <li>Variant ID lookup for <i>${gene}</i> in <a href="javascript:variantIdLookup()">ClinVar</a>
     <li>Allele identifier lookup for <i>${gene}</i> in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
-  appendViewer(`
-  <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
-  <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
-  <div><b>PMID</b>: <input id="pmid" value="${pmid}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
-    <div><b>Gene</b>: ${gene}</div>
-    <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
-  )
-
-  // state-dependent messages to user
-  if ( FSM.state === 'needGene' && ! selection ) {
-    appendViewer(`
+  const contextTemplate = `
+    <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
+    <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
+    <div><b>PMID</b>: <input id="pmid" value="${pmid}" onchange="javascript:savePmidFromInput();javascript:app(reloadEvent)"></input></div>
+      <div><b>Gene</b>: ${gene}</div>
+      <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
+    
+  appendViewer(contextTemplate)      
+  
+  expressStateToUX();
+  
+  function expressStateToUX() {
+    if (FSM.state === 'needGene' && !selection) {
+      appendViewer(`
       <p>To begin (or continue)a curation, go to the window where you clicked the bookmarklet, 
       select the name of a gene, and click the ${appWindowName} button.
-      </ul>`
-    )
-  } else if ( FSM.state === 'needGene' && selection) {
-    appendViewer(`
+      </ul>`);
+    }
+    else if (FSM.state === 'needGene' && selection) {
+      appendViewer(`
       <p>Begin a gene curation for ${selection} in ${articleUrl}
-      <p><button onclick="getGene()"> begin </button>`
-    )
-  } else if ( FSM.state === 'haveGene' && ! selection) {
-    appendViewer(`
-      ${lookupBoilerplate}
+      <p><button onclick="getGene()"> begin </button>`);
+    }
+    else if (FSM.state === 'haveGene' && !selection) {
+      appendViewer(`
+      ${lookupTemplate}
       <p>Nothing is selected in the current article.
       <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} ClinGen button to save the selection and continue.
       <p>Variant ID lookups and allele lookups don't depend on a selection, so you can proceed directly with those.
       <ul>
-      ${variantLookupBoilerplate}
-      </ul>`
-    )
-  } else if (FSM.state === 'haveGene' && selection) {
-    appendViewer(`
-      ${lookupBoilerplate}
+      ${variantLookupTemplate}
+      </ul>`);
+    }
+    else if (FSM.state === 'haveGene' && selection) {
+      appendViewer(`
+      ${lookupTemplate}
       <ul>
-      ${hpoLookupBoilerplate}
-      ${variantLookupBoilerplate}
-      </ul>`
-    )
-  } else if ( FSM.state === 'inMonarchLookup') {
-    appendViewer(`
-      ${hpoLookupBoilerplate2}
-      <p><button onclick="saveMonarchLookup()">post</button>`
-    )
-  } else if ( FSM.state === 'inMseqdrLookup') {
-    appendViewer(`
-      ${hpoLookupBoilerplate2}
-      <p><button onclick="saveMseqdrLookup()">post</button>`
-    )
-  } else if ( FSM.state === 'inVariantIdLookup') {
-    appendViewer(`
+      ${hpoLookupTemplate}
+      ${variantLookupTemplate}
+      </ul>`);
+    }
+    else if (FSM.state === 'inMonarchLookup') {
+      appendViewer(`
+      ${hpoLookupTemplate2}
+      <p><button onclick="saveMonarchLookup()">post</button>`);
+    }
+    else if (FSM.state === 'inMseqdrLookup') {
+      appendViewer(`
+      ${hpoLookupTemplate2}
+      <p><button onclick="saveMseqdrLookup()">post</button>`);
+    }
+    else if (FSM.state === 'inVariantIdLookup') {
+      appendViewer(`
     <p>Annotate the current article with a page note indicating the variant ID (${selection})?
     <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
-    <p><button onclick="saveVariantIdLookup()">post</button>`
-  )
-  } else if ( FSM.state === 'inAlleleIdLookup') {
-    appendViewer(`
+    <p><button onclick="saveVariantIdLookup()">post</button>`);
+    }
+    else if (FSM.state === 'inAlleleIdLookup') {
+      appendViewer(`
       <p>Annotate the current article with a page note indicating the canonical allele ID (${selection})?
       <p>(This will also annotate the lookup page with an annotation anchored to the variant ID there.)
-      <p><button onclick="saveAlleleIdLookup()">post</button>`
-    )    
-} else {
-    console.log('unexpected state', FSM.state)
+      <p><button onclick="saveAlleleIdLookup()">post</button>`);
+    }
+    else {
+      console.log('unexpected state', FSM.state);
+    }
   }
+
 }
 
 // workflow functions
+
+function advanceToSavedState() {
+  // advance state machine to cached FSM state    
+  const savedState = getAppVar(appStateKeys.STATE)
+  if (savedState === 'haveGene') {
+    FSM.getGene()
+  } else if (savedState === 'inMonarchLookup') {
+    FSM.getGene(); FSM.beginMonarchLookup()
+  } else if (savedState === 'inMseqdrLookup') {
+    FSM.getGene(); FSM.beginMseqdrLookup()
+  } else if (savedState === 'inVariantIdLookup') {
+    FSM.getGene(); FSM.beginVariantIdLookup()
+  } else if (savedState === 'inAlleleIdLookup') {
+    FSM.getGene(); FSM.beginAlleleIdLookup()
+  }
+}    
+
 
 function getGene() {
   setAppVar(appStateKeys.GENE, getAppVar(appStateKeys.SELECTION))
@@ -329,6 +330,15 @@ function saveAlleleIdLookup() {
 }
 
 // utility functions
+
+function lookupTypeIsChecked(value) {
+  if ( getLookupType() === value ) {
+    return ' checked '
+  } else {
+    return ''
+  }
+}
+
 
 function clearSelection() {
   setAppVar(appStateKeys.SELECTION, '')
