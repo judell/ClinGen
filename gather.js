@@ -129,6 +129,9 @@ function gather(testArgs) {
     if (testArgs.target_uri) {
       params.target_uri = testArgs.target_uri
     }
+    if (testArgs.testUrlSuffix) {
+      params.testUrlSuffix = testArgs.testUrlSuffix
+    }
   }
   
   console.log(`gather sending ${JSON.stringify(params)}`)
