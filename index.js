@@ -128,7 +128,6 @@ async function app(event) {
   const contextTemplate = `
     <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
     <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
-    <div><b>PMID</b>: ${pmid}</div>
     <div><b>Gene</b>: ${gene}</div>
     <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
     
