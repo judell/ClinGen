@@ -477,15 +477,24 @@ function getApiBaseParamsMinusSelectors() {
   }
 }
 
-function resetWorkflow() {
-  const keys = Object.values(appStateKeys)
-  for (let key of keys) {
-    delete localStorage[key]
-    if (key.indexOf('lookupInstance') != -1) {
-      setAppVar(key, '1')
+async function resetWorkflow() {
+  const gene = getAppVar(appStateKeys.GENE)
+  const user = getUser()
+  if (window.confirm(`Really delete all annotations for ${gene} by ${user} and erase remembered settings for this curation?`)) {
+    const annotations = await hlib.search({
+      user: user,
+      tag: `gene:${gene}`
+    })
+    console.log(annotations)
+    const keys = Object.values(appStateKeys)
+    for (let key of keys) {
+      delete localStorage[key]
+      if (key.indexOf('lookupInstance') != -1) {
+        setAppVar(key, '1')
+      }
     }
+    location.href = location.href
   }
-  location.href = location.href
 }
 
 function appendViewer(str) {
