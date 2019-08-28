@@ -165,14 +165,22 @@ async function app(event) {
       </ul>`);
     }
     else if (FSM.state === 'inMonarchLookup') {
-      appendViewer(`
-        ${hpoLookupTemplate2}
-        <p><button onclick="saveMonarchLookup()">post</button>`);
+      if (launchedFromArticlePage()) {
+        appendViewer(`<p>You are in a Monarch lookup, but you launched from the article page. Please click haveGene, then restart a lookup`)
+      } else {
+        appendViewer(`
+          ${hpoLookupTemplate2}
+          <p><button onclick="saveMonarchLookup()">post</button>`)
+      }
     }
     else if (FSM.state === 'inMseqdrLookup') {
-      appendViewer(`
-        ${hpoLookupTemplate2}
-        <p><button onclick="saveMseqdrLookup()">post</button>`);
+      if (launchedFromArticlePage()) {
+        appendViewer(`<p>You are in an Mseqdr lookup, but you launched from the article page. Please click haveGene, then restart a lookup`)
+      } else {
+        appendViewer(`
+          ${hpoLookupTemplate2}
+          <p><button onclick="saveMseqdrLookup()">post</button>`)
+      }
     }
     else if (FSM.state === 'inVariantIdLookup') {
       appendViewer(`
@@ -316,6 +324,13 @@ function saveAlleleIdLookup() {
 }
 
 // utility functions
+
+function launchedFromArticlePage() {
+  const uri = new URL(location.href)
+  const search = decodeURIComponent(uri.search)
+  const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
+  return search.endsWith(articleUrl)
+}
 
 function extractVariantFromUrl(url) {
   url = decodeURIComponent(url)
