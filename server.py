@@ -1,14 +1,14 @@
-#!/usr/bin/env python2
-import BaseHTTPServer
-import SimpleHTTPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
+#! /usr/bin/python
+
+import http.server
+from http.server import SimpleHTTPRequestHandler
 
 class CORSRequestHandler (SimpleHTTPRequestHandler):
     def end_headers (self):
         self.send_header('Access-Control-Allow-Origin', '*')
         SimpleHTTPRequestHandler.end_headers(self)
 
-def run(server_class=BaseHTTPServer.HTTPServer,
+def run(server_class=http.server.HTTPServer,
         handler_class=CORSRequestHandler):
     server_address = ('', 8001)
     httpd = server_class(server_address, handler_class)
