@@ -93,17 +93,17 @@ async function app(event) {
     <div>I am looking up phenotypes for:
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('individual')} value="individual">
-        individual <select is="integer-select" type="individual" count="10"></select>
+        individual <select is="integer-select" type="individual" count="20"></select>
       </input>
     </div> 
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('family')} value="family"> 
-        family <select is="integer-select" type="family" count="10"></select>
+        family <select is="integer-select" type="family" count="20"></select>
       </input>
     </div>
     <div>
       <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('group')} value="group">
-         group <select is="integer-select" type="group" count="10"></select>
+         group <select is="integer-select" type="group" count="20"></select>
       </input>
     </div>
     </p>
