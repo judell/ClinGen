@@ -344,14 +344,25 @@ async function searchAnnotationsByTag(tag) {
   return annos;
 }
 
-function saveLookup(text, tags, transition, targetUri, anchored) {
+async function saveLookup(text, tags, transition, targetUri, anchored) {
   if (tags.indexOf('hpoLookup') != -1) {
     tags = addLookupTypeAndInstanceTags(tags)
+  } else {
+    alert('Expected tag hpoLookup not found, aborting.')
+    return
+  }
+  const gene = getAppVar(appStateKeys.GENE)
+  let annos = await searchAnnotationsByTag(`gene:${gene}`)
+  for (let tag of tags) {
+    annos = annos.filter(a => a.tags.indexOf(tag) > -1)  
+  }
+  if (annos.length) {
+    alert(`There is already an annotation with the tags [${tags.join(', ')}]. Please click haveGene to retry with a different selection and/or individual/family/group.`)
+    return
   }
   const params = anchored ? getApiBaseParams() : getApiBaseParamsMinusSelectors()
   params.uri = targetUri
   params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
-  const gene = getAppVar(appStateKeys.GENE)
   params.tags = params.tags.concat(tags, `gene:${gene}`)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
