@@ -19,6 +19,8 @@ const appStateKeys = {
   LOOKUP_INSTANCE_GROUP: `${appWindowName}_lookupInstanceGroup`,
 }
 
+const lookupTags = ['hpoLookup', 'variantLookup', 'alleleLookup']
+
 // just public for now, can swap in the group picker as/when needed
 const hypothesisGroup = '__world__'
 
@@ -360,10 +362,13 @@ async function searchAnnotationsByTag(tag) {
 }
 
 async function saveLookup(text, tags, transition, targetUri, anchored) {
-  if (tags.indexOf('hpoLookup') != -1) {
+  const haveLookupTag = lookupTags
+                          .filter(x => tags.includes(x))
+                          .length > 0
+  if (haveLookupTag) {
     tags = addLookupTypeAndInstanceTags(tags)
   } else {
-    alert('Expected tag hpoLookup not found, aborting.')
+    alert(`Expected one of these tags: ${lookupTags.join(', ')}`)
     return
   }
   const gene = getAppVar(appStateKeys.GENE)
@@ -388,9 +393,12 @@ function addLookupTypeAndInstanceTags(tags) {
   const lookupType = localStorage.getItem(appStateKeys.LOOKUP_TYPE)
   const instanceKey = getLookupKey(lookupType)
   const instanceNum = localStorage.getItem(instanceKey)
+  const lookupTarget = tags[0]
   if (lookupType) {
-    tags.push(`phenotype:${lookupType}`)
+    tags.push(`${lookupTarget}:${lookupType}`)
     tags.push(`${lookupType}:${instanceNum}`)
+  } else {
+    alert(`Did not find a lookup type in ${appStateKeys.LOOKUP_TYPE}`)
   }
   return tags
 }
