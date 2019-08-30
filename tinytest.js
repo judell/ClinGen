@@ -152,6 +152,9 @@ tests({
 					testUrlSuffix: 'phenotype/HP:0001660'
 				})
 				await hlib.delaySeconds(3)
+				gather({
+					invoke: 'reportLookupClusters()'
+				})
 				const data = await hlib.search({
 					tag: 'monarchLookup',
 					user: testUser
@@ -159,7 +162,7 @@ tests({
 				const annos = data[0]
 				assertEquals(1, annos.length)
 				assertEquals(
-					`["${appWindowName}","hpoLookup","monarchLookup","HP:0001660","phenotype:individual","individual:1","gene:TMEM260"]`,
+					`["${appWindowName}","hpoLookup","monarchLookup","HP:0001660","hpoLookup:individual","individual:1","gene:TMEM260"]`,
 					JSON.stringify(annos[0].tags)
 				)
 				assertEquals('haveGene', localStorage[`${appWindowName}_state`])
@@ -183,6 +186,9 @@ tests({
 					testUrlSuffix: '/variation/426075/'
 				})
 				await hlib.delaySeconds(2)
+				gather({
+					invoke: 'reportLookupClusters()'
+				})
 				const data = await hlib.search({
 					url: testUrl,
 					tag: 'variantLookup',
@@ -191,22 +197,11 @@ tests({
 				const annos = data[0]
 				assertEquals(1, annos.length)
 				const anno = annos[0]
-  			assertEquals(`["${appWindowName}","variantLookup","variant:426075","gene:TMEM260"]`, JSON.stringify(anno.tags))
+  			assertEquals(`["${appWindowName}","variantLookup","variant:426075","variantLookup:individual","individual:1","gene:TMEM260"]`, JSON.stringify(anno.tags))
 				assertEquals('haveGene', localStorage[`${appWindowName}_state`])
 			}
 			resolve(runTest())
 		})
 	},
-  
-  cleanup: function() {
-    return new Promise (resolve => {
-      async function worker() {
-        await cleanup()
-        resolve()
-      }
-      worker()
-      })
-    },  
-
-
+	
 })
