@@ -585,9 +585,9 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 function refreshUI() {
   clearUI()
   refreshSvg()
-  reportHpoClusters()
-  reportVariantIdLookup()
-  reportAlleleIdLookup()
+  reportLookupClusters('hpoLookup')
+  //reportVariantIdLookup()
+  //reportAlleleIdLookup()
 }
 
 async function refreshSvg() {
@@ -620,37 +620,37 @@ async function refreshSvg() {
   })
 }
 
-async function reportHpoClusters() {
-  const annos = await searchAnnotationsByTag('hpoLookup');
+async function reportLookupClusters(tag) {
+  const annos = await searchAnnotationsByTag(tag)
   
   function filterAnnosByLookupType(annos, type) {
-    return annos.filter(a => a.tags.indexOf(`hpoLookup:${type}`) > -1)
+    return annos.filter(a => a.tags.indexOf(`${tag}:${type}`) > -1)
   }
 
-  function organizeHpoLookupsByInstanceType(annos, type) {
-    const hpoCodes = {}
+  function organizeLookupsByInstanceType(annos, type, namespace) {
+    const values = {}
     for (anno of annos) {
       const instanceTag = anno.tags.filter(t => { return t.startsWith(`${type}:`) })[0]
-      const hpoCode = anno.tags.filter(t => { return t.startsWith('HP:') })[0]
-      if (hpoCodes[instanceTag]) {
-        hpoCodes[instanceTag].push(hpoCode)
+      const value = anno.tags.filter(t => { return t.startsWith(namespace) })[0]
+      if (values[instanceTag]) {
+        values[instanceTag].push(value)
       } else {
-        hpoCodes[instanceTag] = [hpoCode]
+        values[instanceTag] = [value]
       }
     }
-    return hpoCodes
+    return values
   }
 
-  function reportHpoCodes(id, hpoCodes) {
-    const keys = Object.keys(hpoCodes).sort()
+  function reportLookupValues(id, values) {
+    const keys = Object.keys(values).sort()
     let html = ''
       for (let key of keys) {
-        html += `<div>${key} ${hpoCodes[key].join(', ')}</div>`
+        html += `<div>${key} ${values[key].join(', ')}</div>`
     }
     hlib.getById(id).innerHTML = html
   }
 
-  function linkHpoTypes(id, type) {
+  function linkLookupTypes(id, type) {
     const gene = encodeURIComponent(`gene:${getAppVar(appStateKeys.GENE)}`)
     type = encodeURIComponent(`phenotype:${type}`)
     const text = hlib.getById(id).innerHTML
@@ -659,16 +659,16 @@ async function reportHpoClusters() {
     hlib.getById(id).innerHTML = html
   }
 
-  function reportHpoCluster(annos, type, linkId, clusterId) {
+  function reportLookupCluster(namespace, annos, type, linkId, clusterId) {
     const clusterAnnos = filterAnnosByLookupType(annos, type)
-    const hpoCodes = organizeHpoLookupsByInstanceType(clusterAnnos, type)
-    linkHpoTypes(linkId, type)
-    reportHpoCodes(clusterId, hpoCodes)
+    const hpoCodes = organizeLookupsByInstanceType(clusterAnnos, type, namespace)
+    //linkLookupTypes(linkId, type)
+    reportLookupValues(clusterId, hpoCodes)
   }
 
-  reportHpoCluster(annos, 'individual', 'hpoIndividualLabel', 'hpoIndividual')
-  reportHpoCluster(annos, 'family', 'hpoFamilyLabel', 'hpoFamily')
-  reportHpoCluster(annos, 'group', 'hpoGroupLabel', 'hpoGroup')
+  reportLookupCluster('HP:', annos, 'individual', 'individualLabel', 'individualResults')
+  reportLookupCluster('HP:', annos, 'family', 'familyLabel', 'familyResults')
+  reportLookupCluster('HP:', annos, 'group', 'groupLabel', 'groupResults')
 }
 
 async function reportVariantOrIdLookup(id, tag, namespace) {
