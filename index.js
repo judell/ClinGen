@@ -20,6 +20,7 @@ const appStateKeys = {
 }
 
 const lookupTags = ['hpoLookup', 'variantLookup', 'alleleLookup']
+const lookupTypes = ['individual', 'family', 'group']
 
 // just public for now, can swap in the group picker as/when needed
 const hypothesisGroup = '__world__'
@@ -35,10 +36,9 @@ window.addEventListener('message', function(event) {
 
 async function app(event) {
 
-  console.log(event)
-
   if (event.advanceToSavedState) {
     advanceToSavedState()
+    reportLookupClusters()
   }
   
   // remember target_uri passed in url
@@ -78,7 +78,6 @@ async function app(event) {
       await hlib.delaySeconds(3)
     }
   }
-
 
   refreshUI()
 
@@ -220,7 +219,6 @@ function advanceToSavedState() {
     FSM.getGene(); FSM.beginAlleleIdLookup()
   }
 }    
-
 
 function getGene() {
   setAppVar(appStateKeys.GENE, getAppVar(appStateKeys.SELECTION))
@@ -585,7 +583,6 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 function refreshUI() {
   clearUI()
   refreshSvg()
-  reportLookupClusters('hpoLookup')
   //reportVariantIdLookup()
   //reportAlleleIdLookup()
 }
@@ -620,7 +617,15 @@ async function refreshSvg() {
   })
 }
 
-async function reportLookupClusters(tag) {
+function reportLookupClusters() {
+  hlib.getById('individualResults').innerHTML = ''
+  for (lookupType of lookupTypes) {
+    reportLookupCluster(lookupType, 'hpoLookup', 'HP:')
+    reportLookupCluster(lookupType, 'variantLookup', 'variant:')
+  }
+}
+
+async function reportLookupCluster(type, tag, namespace) {
   const annos = await searchAnnotationsByTag(tag)
   
   function filterAnnosByLookupType(annos, type) {
@@ -641,13 +646,14 @@ async function reportLookupClusters(tag) {
     return values
   }
 
-  function reportLookupValues(id, values) {
+  function reportLookupValues(type, values) {
     const keys = Object.keys(values).sort()
     let html = ''
-      for (let key of keys) {
-        html += `<div>${key} ${values[key].join(', ')}</div>`
+    for (let key of keys) {
+      html += `<div>${key} ${values[key].join(', ')}</div>`
     }
-    hlib.getById(id).innerHTML = html
+    const elementId = `${type}Results`
+    hlib.getById(elementId).innerHTML += html
   }
 
   function linkLookupTypes(id, type) {
@@ -659,35 +665,14 @@ async function reportLookupClusters(tag) {
     hlib.getById(id).innerHTML = html
   }
 
-  function reportLookupCluster(namespace, annos, type, linkId, clusterId) {
+  function _reportLookupCluster(type, namespace, annos) {
     const clusterAnnos = filterAnnosByLookupType(annos, type)
-    const hpoCodes = organizeLookupsByInstanceType(clusterAnnos, type, namespace)
+    const values = organizeLookupsByInstanceType(clusterAnnos, type, namespace)
     //linkLookupTypes(linkId, type)
-    reportLookupValues(clusterId, hpoCodes)
+    reportLookupValues(type, values)
   }
 
-  reportLookupCluster('HP:', annos, 'individual', 'individualLabel', 'individualResults')
-  reportLookupCluster('HP:', annos, 'family', 'familyLabel', 'familyResults')
-  reportLookupCluster('HP:', annos, 'group', 'groupLabel', 'groupResults')
-}
-
-async function reportVariantOrIdLookup(id, tag, namespace) {
-  let annos = await searchAnnotationsByTag(tag)
-  let variantId = ''
-  annos = annos.filter(a => a.tags.indexOf(tag) > -1)
-  if (annos.length) {
-    let anno = annos[0]
-    variantId = anno.tags.filter(t => t.startsWith(namespace))
-  }
-  hlib.getById(id).innerHTML = variantId
-}
-
-function reportVariantIdLookup() {
-  reportVariantOrIdLookup('variantIdLookup', 'variantLookup', 'variant:')
-}
-
-function reportAlleleIdLookup() {
-  reportVariantOrIdLookup('alleleIdLookup', 'alleleLookup', 'allele:')
+  _reportLookupCluster(type, namespace, annos)
 }
 
 
