@@ -515,11 +515,13 @@ async function resetWorkflow() {
   const gene = getAppVar(appStateKeys.GENE)
   const user = getUser()
   if (window.confirm(`Really delete all annotations for ${gene} by ${user} and erase remembered settings for this curation?`)) {
-    const annotations = await hlib.search({
+    const [annotations, replies] = await hlib.search({
       user: user,
       tag: `gene:${gene}`
     })
-    console.log(annotations)
+    for (annotation of annotations) {
+      hlib.deleteAnnotation(annotation.id)
+    }
     const keys = Object.values(appStateKeys)
     for (let key of keys) {
       delete localStorage[key]
@@ -622,7 +624,7 @@ async function reportHpoClusters() {
   const annos = await searchAnnotationsByTag('hpoLookup');
   
   function filterAnnosByLookupType(annos, type) {
-    return annos.filter(a => a.tags.indexOf(`phenotype:${type}`) > -1)
+    return annos.filter(a => a.tags.indexOf(`hpoLookup:${type}`) > -1)
   }
 
   function organizeHpoLookupsByInstanceType(annos, type) {
