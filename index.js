@@ -273,7 +273,8 @@ function saveMonarchLookup() {
     return
   }
   const hpoCode = match[1]
-  const text = 'Monarch lookup result'
+  const resultUrl = getAppVar(appStateKeys.TARGET_URI)
+  const text = `Monarch lookup result: <a href="${resultUrl}">${resultUrl}</a>`
   const tags = ['hpoLookup', 'monarchLookup', hpoCode]
   const transition = 'saveMonarchLookup'
   // save an anchored annotation on the article
@@ -290,7 +291,8 @@ function saveMseqdrLookup() {
   let hpoCode = match[1]
   while (hpoCode.length < 7) { hpoCode = '0' + hpoCode }
   hpoCode = `HP:${hpoCode}`
-  const text = 'Mseqdr lookup result'
+  const resultUrl = getAppVar(appStateKeys.TARGET_URI)
+  const text = `Mseqdr lookup result: <a href="${resultUrl}">${resultUrl}</a>`
   const tags = ['hpoLookup', 'mseqdrLookup', hpoCode]
   const transition = 'saveMseqdrLookup'
   // save an anchored annotation on the article
@@ -379,8 +381,9 @@ async function saveLookup(text, tags, transition, targetUri, anchored) {
     return
   }
   const params = anchored ? getApiBaseParams() : getApiBaseParamsMinusSelectors()
+  params.username = getUser()
   params.uri = targetUri
-  params.text = `${text}: <a href="${targetUri}">${targetUri}</a>`
+  params.text = text
   params.tags = params.tags.concat(tags, `gene:${gene}`)
   const payload = hlib.createAnnotationPayload(params)
   const token = hlib.getToken()
