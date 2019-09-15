@@ -58,26 +58,26 @@ a {
 
 <p id="articleContext"></p>
 
-<div is="type-integer-select-collection">
-  <div is="type-integer-select" type="individual">
-    <input type="radio" is="radio-select" name="lookupType" value="individual">
+<radio-integer-select-collection>
+  <radio-integer-select type="individual">
+    <radio-select name="lookupType" type="individual">
       individual 
-    </input>
+    </radio-integer-select>
     <select is="integer-select" type="individual" count="20"></select>
   </div>
-  <div is="type-integer-select" type="family">
-    <input type="radio" is="radio-select" name="lookupType" value="family">
+  <radio-integer-select type="family">
+    <radio-select name="lookupType" type="family">
       family
-    </input>
+    </radio-select>
     <select is="integer-select" type="family" count="20"></select>
   </div>
-  <div is="type-integer-select" type="group">
-    <input type="radio" is="radio-select" name="lookupType" value="group">
+  <radio-integer-select type="group">
+    <radio-select name="lookupType" type="group">
       group
-    </input>
+    </radio-select>
     <select is="integer-select" type="group" count="20"></select>
-  </div>
-</div>
+  </radio-integer-select>
+  </radio-integer-select>
 
 <div id="lookupContext"></div>
 
