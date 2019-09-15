@@ -56,6 +56,31 @@ a {
   </div>  
 </div>
 
+<p id="articleContext"></p>
+
+<div is="type-integer-select-collection">
+  <div is="type-integer-select" type="individual">
+    <input type="radio" is="radio-select" name="lookupType" value="individual">
+      individual 
+    </input>
+    <select is="integer-select" type="individual" count="20"></select>
+  </div>
+  <div is="type-integer-select" type="family">
+    <input type="radio" is="radio-select" name="lookupType" value="family">
+      family
+    </input>
+    <select is="integer-select" type="family" count="20"></select>
+  </div>
+  <div is="type-integer-select" type="group">
+    <input type="radio" is="radio-select" name="lookupType" value="group">
+      group
+    </input>
+    <select is="integer-select" type="group" count="20"></select>
+  </div>
+</div>
+
+<div id="lookupContext"></div>
+
 <div id="viewer"></div>
 
 <div id="actionButton"></div>
