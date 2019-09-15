@@ -697,16 +697,16 @@ createFSM()
 
 // custom elements
 
-class TypeIntegerSelect extends HTMLDivElement {
+class RadioIntegerSelect extends HTMLElement {
   constructor() {
     super()
   }
   connectedCallback() {
   }
 }
-customElements.define('type-integer-select', TypeIntegerSelect, { extends: "div" })
+customElements.define('radio-integer-select', RadioIntegerSelect)
 
-class TypeIntegerSelectCollection extends HTMLDivElement {
+class RadioIntegerSelectCollection extends HTMLElement {
   constructor() {
     super()
     function handler(e) {
@@ -717,23 +717,25 @@ class TypeIntegerSelectCollection extends HTMLDivElement {
   connectedCallback() {
   }
 }
-customElements.define('type-integer-select-collection', TypeIntegerSelectCollection, { extends: "div" })
+customElements.define('radio-integer-select-collection', RadioIntegerSelectCollection)
 
-class TypeSelect extends HTMLInputElement {
+class RadioSelect extends HTMLElement {
+  name
   value
   constructor() {
     super()
   }
   connectedCallback() {
-    value = this.getAttribute('value')
+    this.name = this.getAttribute('name')
+    this.value = this.getAttribute('value')
     this.innerHTML = `
-      <input type="radio" is="type-select" name="lookupType" value="${value}">
-        ${value}
+      <input type="radio" name="${name}" value="${this.value}">
+        ${this.value}
       </input>
     `
   }
 }
-customElements.define('type-select', TypeSelect, { extends: "div" })
+customElements.define('radio-select', RadioSelect)
 
 class IntegerSelect extends HTMLSelectElement {
   type
@@ -748,7 +750,7 @@ class IntegerSelect extends HTMLSelectElement {
           value: 2
         }
       })
-    this.closest('*[is="type-integer-select-collection"]').dispatchEvent(e)
+    this.closest('radio-integer-select-collection').dispatchEvent(e)
   }
   connectedCallback() {
     const count = parseInt(this.getAttribute('count'))
