@@ -90,29 +90,11 @@ async function app(event) {
   const lookupType = getLookupType()
   const lookupInstance = getLookupInstance(lookupType)
   const lookupTemplate = `
-    <p>
-    <div>I am looking up phenotypes for:
-    <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('individual')} value="individual">
-        individual <select is="integer-select" type="individual" count="20"></select>
-      </input>
-    </div> 
-    <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('family')} value="family"> 
-        family <select is="integer-select" type="family" count="20"></select>
-      </input>
-    </div>
-    <div>
-      <input type="radio" onchange="setLookupType()" name="lookupType" ${lookupTypeIsChecked('group')} value="group">
-         group <select is="integer-select" type="group" count="20"></select>
-      </input>
-    </div>
-    </p>
     <p>Ready for <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:hpoLookup">HPO lookups</a>,
       <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:variantIdLookup">variant ID lookups</a>,
       and <a target="_lookup" href="https://hypothes.is/search?q=tag:gene:${gene}+tag:alleleIdLookup">allele ID lookups</a>.
     `
-
+  
   const hpoLookupTemplate = `
     <li>HPO lookup for <i>${selection}</i> in <a href="javascript:monarchLookup()">Monarch</a>
     <li>HPO lookup in <i>${selection}</i> in <a href="javascript:mseqdrLookup()">Mseqdr</a> `
@@ -126,14 +108,16 @@ async function app(event) {
     <li>Variant ID lookup for <i>${gene}</i> in <a href="javascript:variantIdLookup()">ClinVar</a>
     <li>Allele identifier lookup for <i>${gene}</i> in the <a href="javascript:alleleIdLookup()">ClinGen allele registry</a>`
     
-  const contextTemplate = `
+  const articleContext = `
     <div><b>Article</b>: <a href="${articleUrl}">${articleUrl}</a></div>
     <div><b>Target URI</b>: <a href="${targetUri}">${targetUri}</a></div>
     <div><b>Gene</b>: ${gene}</div>
-    <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>`
+    <div><b>Selection</b>: <span class="clinGenSelection">${selection}</span></div>
+    `
     
-  appendViewer(contextTemplate)      
-  expressStateToUX();
+  hlib.getById('articleContext').innerHTML = articleContext
+
+  expressStateToUX()
   
   function expressStateToUX() {
     if (FSM.state === 'needGene' && !selection) {
@@ -552,7 +536,6 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
   
   function transit(transition) {
     eval(`FSM.${transition}()`)
-    refreshUI()
   }
 
   const data = await hlib.postAnnotation(payload, token)
@@ -586,8 +569,6 @@ async function postAnnotationAndUpdateState(payload, token, transition) {
 function refreshUI() {
   clearUI()
   refreshSvg()
-  //reportVariantIdLookup()
-  //reportAlleleIdLookup()
 }
 
 async function refreshSvg() {
@@ -716,11 +697,58 @@ createFSM()
 
 // custom elements
 
+class TypeIntegerSelect extends HTMLDivElement {
+  constructor() {
+    super()
+  }
+  connectedCallback() {
+  }
+}
+customElements.define('type-integer-select', TypeIntegerSelect, { extends: "div" })
+
+class TypeIntegerSelectCollection extends HTMLDivElement {
+  constructor() {
+    super()
+    function handler(e) {
+      console.log(e)  
+    }
+    this.addEventListener('integer-select-event', handler)
+  }
+  connectedCallback() {
+  }
+}
+customElements.define('type-integer-select-collection', TypeIntegerSelectCollection, { extends: "div" })
+
+class TypeSelect extends HTMLInputElement {
+  value
+  constructor() {
+    super()
+  }
+  connectedCallback() {
+    value = this.getAttribute('value')
+    this.innerHTML = `
+      <input type="radio" is="type-select" name="lookupType" value="${value}">
+        ${value}
+      </input>
+    `
+  }
+}
+customElements.define('type-select', TypeSelect, { extends: "div" })
+
 class IntegerSelect extends HTMLSelectElement {
   type
   constructor() {
     super()
     this.type = this.getAttribute('type')
+  }
+  relaySelection() {
+    const e = new CustomEvent('integer-select-event', { 
+        detail: {
+          type: this.type,
+          value: 2
+        }
+      })
+    this.closest('*[is="type-integer-select-collection"]').dispatchEvent(e)
   }
   connectedCallback() {
     const count = parseInt(this.getAttribute('count'))
@@ -731,11 +759,7 @@ class IntegerSelect extends HTMLSelectElement {
       options += `<option ${selected}>${i}</option>`
     }
     this.innerHTML = options
-    this.onchange = this.selectionChanged
-  }
-  selectionChanged() {
-    const newValue = this.options[this.selectedIndex].value
-    setLookupInstance(this.type, newValue)
+    this.onchange = this.relaySelection
   }
 }
 customElements.define('integer-select', IntegerSelect, { extends: "select" })
