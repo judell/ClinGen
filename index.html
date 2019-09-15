@@ -58,26 +58,11 @@ a {
 
 <p id="articleContext"></p>
 
-<radio-integer-select-collection>
-  <radio-integer-select type="individual">
-    <radio-select name="lookupType" type="individual">
-      individual 
-    </radio-integer-select>
-    <select is="integer-select" type="individual" count="20"></select>
-  </div>
-  <radio-integer-select type="family">
-    <radio-select name="lookupType" type="family">
-      family
-    </radio-select>
-    <select is="integer-select" type="family" count="20"></select>
-  </div>
-  <radio-integer-select type="group">
-    <radio-select name="lookupType" type="group">
-      group
-    </radio-select>
-    <select is="integer-select" type="group" count="20"></select>
-  </radio-integer-select>
-  </radio-integer-select>
+<labeled-integer-select-collection>
+  <labeled-integer-select type="individual" count="20"></labeled-integer-select>
+  <labeled-integer-select type="family" count="20"></labeled-integer-select>
+  <labeled-integer-select type="group" count="20"></labeled-integer-select>
+</labeled-integer-select-collection>
 
 <div id="lookupContext"></div>
 

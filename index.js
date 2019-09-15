@@ -697,55 +697,49 @@ createFSM()
 
 // custom elements
 
-class RadioIntegerSelect extends HTMLElement {
+class LabeledIntegerSelect extends HTMLElement {
+  type
+  count
   constructor() {
     super()
   }
   connectedCallback() {
+    this.type = this.getAttribute('type')
+    this.count = this.getAttribute('count')
+    this.innerHTML = `
+      <span class="integer-select-type">${this.type}</span>
+      <select is="integer-select" type="${this.type}" count="${this.count}"></select>
+      `
   }
 }
-customElements.define('radio-integer-select', RadioIntegerSelect)
+customElements.define('labeled-integer-select', LabeledIntegerSelect)
 
-class RadioIntegerSelectCollection extends HTMLElement {
+class LabeledIntegerSelectCollection extends HTMLElement {
   constructor() {
     super()
     function handler(e) {
-      console.log(e.detail)  
-    }
-    this.addEventListener('integer-select-event', handler)
-    this.addEventListener('radio-select-event', handler)
-  }
-  connectedCallback() {
-  }
-}
-customElements.define('radio-integer-select-collection', RadioIntegerSelectCollection)
-
-class RadioSelect extends HTMLElement {
-  name
-  type
-  constructor() {
-    super()
-  }
-  relaySelection() {
-    const e = new CustomEvent('radio-select-event', { 
-      detail: {
-        value: this.type
+      console.log(JSON.stringify(e.detail))
+      const integerSelects = Array.from(this.querySelectorAll('labeled-integer-select'))
+      for (let integerSelect of integerSelects) {
+        const label = integerSelect.querySelector('.integer-select-type')
+        if (label.innerText === e.detail.type) {
+          label.setAttribute('selected', true)
+          label.style.fontWeight = 'bold'
+        } else {
+          label.removeAttribute('selected')
+          label.style.fontWeight = 'normal'
+        }
       }
-    })
-  this.closest('radio-integer-select-collection').dispatchEvent(e)
+    }
+    this.addEventListener('labeled-integer-select-event', handler)
   }
   connectedCallback() {
-    this.name = this.getAttribute('name')
-    this.type = this.getAttribute('type')
-    this.innerHTML = `
-      <input type="radio" name="${name}" value="${this.type}">
-        ${this.type}
-      </input>
-      `
-    this.onchange = this.relaySelection
+    const firstLabeledIntegerSelect = this.querySelector('labeled-integer-select')
+    firstLabeledIntegerSelect.setAttribute('selected', true)
+    firstLabeledIntegerSelect.querySelector('.integer-select-type').style.fontWeight = 'bold'
   }
 }
-customElements.define('radio-select', RadioSelect)
+customElements.define('labeled-integer-select-collection', LabeledIntegerSelectCollection)
 
 class IntegerSelect extends HTMLSelectElement {
   type
@@ -754,13 +748,13 @@ class IntegerSelect extends HTMLSelectElement {
     this.type = this.getAttribute('type')
   }
   relaySelection() {
-    const e = new CustomEvent('integer-select-event', { 
+    const e = new CustomEvent('labeled-integer-select-event', { 
       detail: {
         type: this.type,
         value: this.options[this.selectedIndex].value
       }
     })
-  this.closest('radio-integer-select-collection').dispatchEvent(e)
+  this.closest('labeled-integer-select-collection').dispatchEvent(e)
 }
   connectedCallback() {
     const count = parseInt(this.getAttribute('count'))
