@@ -160,7 +160,6 @@ tests({
 					user: testUser
 				})
 				const annos = data[0]
-				assertEquals(1, annos.length)
 				assertEquals(
 					`["${appWindowName}","hpoLookup","monarchLookup","HP:0001660","hpoLookup:individual","individual:1","gene:TMEM260"]`,
 					JSON.stringify(annos[0].tags)
