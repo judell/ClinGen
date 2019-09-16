@@ -103,9 +103,9 @@ class IntegerSelect extends HTMLSelectElement {
         value: this.options[this.selectedIndex].value
       }
     })
-  const closestLabeledIntegerSelectCollection = this.closest('labeled-integer-select-collection')
-  if (closestLabeledIntegerSelectCollection) {
-    closestLabeledIntegerSelectCollection.dispatchEvent(e)
+  const closestCollection = this.closest('labeled-integer-select-collection')
+  if (closestCollection) {
+    closestCollection.dispatchEvent(e)
   }
   dispatchEvent(e)
 }
