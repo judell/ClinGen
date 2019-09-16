@@ -413,10 +413,6 @@ function getUser() {
   return localStorage.getItem('h_user')
 }
 
-function setLookupType(type) {
-  setAppVar(type, document.querySelector('labeled-integer-select[selected="true"]').type)
-}
-
 function getLookupType() {
   const value = getAppVar(appStateKeys.LOOKUP_TYPE)
   return value ? value : 'individual'
