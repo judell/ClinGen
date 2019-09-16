@@ -748,7 +748,12 @@ class IntegerSelect extends HTMLSelectElement {
         value: this.options[this.selectedIndex].value
       }
     })
-  this.closest('labeled-integer-select-collection').dispatchEvent(e)
+  // if in a collection, tell the collection so it can update its display
+  const closestCollection = this.closest('labeled-integer-select-collection')
+  if (closestCollection) {
+    closestCollection.dispatchEvent(e)
+  }
+  // tell the app so it can save/restore the collection's choice
   dispatchEvent(e)
 }
   connectedCallback() {
