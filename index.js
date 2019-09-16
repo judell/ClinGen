@@ -713,7 +713,7 @@ customElements.define('labeled-integer-select', LabeledIntegerSelect)
 class LabeledIntegerSelectCollection extends HTMLElement {
   static handler(e) {
     console.log(JSON.stringify(e.detail))
-    // downside of using a static method to export this handler: we assume only one of these elements in the document
+    // downside of using a static method to export this handler: can only have one of these elements in the document
     const element = document.querySelector('labeled-integer-select-collection') 
     const integerSelects = Array.from(element.querySelectorAll('labeled-integer-select'))
     for (let integerSelect of integerSelects) {
