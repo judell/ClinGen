@@ -1,5 +1,3 @@
-// runs in a window opened by the bookmarklet, receives messages from the host
-
 const appWindowName = 'ClinGen'
 
 // localStorage keys used to remember FSM state and related app state
@@ -10,8 +8,39 @@ const appStateKeys = {
   LOOKUP_INSTANCE_GROUP: `${appWindowName}_lookupInstanceGroup`,
 }
 
-const lookupTags = ['hpoLookup', 'variantLookup', 'alleleLookup']
-const lookupTypes = ['individual', 'family', 'group']
+function setAppVar(key, value) {
+  localStorage.setItem(key, value)
+}
+
+function getAppVar(key) {
+  const value = localStorage.getItem(key)
+  return (typeof value !== 'undefined') ? value : null
+}
+
+function setLookupInstance(type, num) {
+  const key = getLookupKey(type)
+  setAppVar(key, num)
+}
+
+function getLookupInstance(type) {
+  const key = getLookupKey(type)
+  const value = getAppVar(key)
+  return value ? value : '1'
+}
+
+function getLookupKey(type) {
+  let key 
+  if (type === 'individual') {
+    key = appStateKeys.LOOKUP_INSTANCE_INDIVIDUAL
+  }
+  if (type === 'family') {
+    key = appStateKeys.LOOKUP_INSTANCE_FAMILY
+  }
+  if (type === 'group') {
+    key = appStateKeys.LOOKUP_INSTANCE_GROUP    
+  }
+  return key
+}
 
 // custom elements
 
@@ -74,7 +103,10 @@ class IntegerSelect extends HTMLSelectElement {
         value: this.options[this.selectedIndex].value
       }
     })
-  this.closest('labeled-integer-select-collection').dispatchEvent(e)
+  const closestLabeledIntegerSelectCollection = this.closest('labeled-integer-select-collection')
+  if (closestLabeledIntegerSelectCollection) {
+    closestLabeledIntegerSelectCollection.dispatchEvent(e)
+  }
   dispatchEvent(e)
 }
   connectedCallback() {
