@@ -332,15 +332,11 @@ function extractAlleleFromUrl(url) {
 
 async function searchAnnotationsByTag(tag) {
   const gene = getAppVar(appStateKeys.GENE)
-  const opts = {
-    method: 'GET',
-    url: `https://hypothes.is/api/search?tags=gene:${gene}&tags=${tag}`,
-    params: {
-      limit: 200
+  const params = {
+    tag: `gene:${gene}`,
+    user: getUser()
     }
-  };
-  const data = await hlib.httpRequest(opts);
-  const rows = JSON.parse(data.response).rows;
+  const [rows, replies] = await hlib.search(params)
   const annos = rows.map(r => hlib.parseAnnotation(r));
   return annos;
 }
@@ -417,8 +413,8 @@ function getUser() {
   return localStorage.getItem('h_user')
 }
 
-function setLookupType() {
-  setAppVar(appStateKeys.LOOKUP_TYPE, document.querySelector('input[name=lookupType]:checked').value)
+function setLookupType(type) {
+  setAppVar(type, document.querySelector('labeled-integer-select[selected="true"]').type)
 }
 
 function getLookupType() {
@@ -715,23 +711,25 @@ class LabeledIntegerSelect extends HTMLElement {
 customElements.define('labeled-integer-select', LabeledIntegerSelect)
 
 class LabeledIntegerSelectCollection extends HTMLElement {
-  constructor() {
-    super()
-    function handler(e) {
-      console.log(JSON.stringify(e.detail))
-      const integerSelects = Array.from(this.querySelectorAll('labeled-integer-select'))
-      for (let integerSelect of integerSelects) {
-        const label = integerSelect.querySelector('.integer-select-type')
-        if (label.innerText === e.detail.type) {
-          label.setAttribute('selected', true)
-          label.style.fontWeight = 'bold'
-        } else {
-          label.removeAttribute('selected')
-          label.style.fontWeight = 'normal'
-        }
+  static handler(e) {
+    console.log(JSON.stringify(e.detail))
+    // downside of using a static method to export this handler: we assume only one of these elements in the document
+    const element = document.querySelector('labeled-integer-select-collection') 
+    const integerSelects = Array.from(element.querySelectorAll('labeled-integer-select'))
+    for (let integerSelect of integerSelects) {
+      const label = integerSelect.querySelector('.integer-select-type')
+      if (label.innerText === e.detail.type) {
+        label.setAttribute('selected', true)
+        label.style.fontWeight = 'bold'
+      } else {
+        label.removeAttribute('selected')
+        label.style.fontWeight = 'normal'
       }
     }
-    this.addEventListener('labeled-integer-select-event', handler)
+  }
+  constructor() {
+    super()
+    this.addEventListener('labeled-integer-select-event', LabeledIntegerSelectCollection.handler)
   }
   connectedCallback() {
     const firstLabeledIntegerSelect = this.querySelector('labeled-integer-select')
@@ -755,6 +753,7 @@ class IntegerSelect extends HTMLSelectElement {
       }
     })
   this.closest('labeled-integer-select-collection').dispatchEvent(e)
+  dispatchEvent(e)
 }
   connectedCallback() {
     const count = parseInt(this.getAttribute('count'))
@@ -765,7 +764,7 @@ class IntegerSelect extends HTMLSelectElement {
       options += `<option ${selected}>${i}</option>`
     }
     this.innerHTML = options
-    this.onchange = this.relaySelection
+    this.onclick = this.relaySelection
   }
 }
 customElements.define('integer-select', IntegerSelect, { extends: "select" })

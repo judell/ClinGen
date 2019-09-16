@@ -94,7 +94,21 @@ a {
 <script>
   setTimeout(_ => {
     hlib.manageTokenDisplayAndReset()
+    const lookupType = getAppVar(appStateKeys.LOOKUP_TYPE)
+    const e = new CustomEvent('labeled-integer-select-event', { 
+      detail: {
+        type: lookupType,
+        value: getLookupInstance(lookupType)
+      }
+    })
+    LabeledIntegerSelectCollection.handler(e)
   }, 400)
+
+  window.addEventListener('labeled-integer-select-event', e => {
+    console.log('window: ' + JSON.stringify(e.detail))
+    setAppVar(appStateKeys.LOOKUP_TYPE, e.detail.type)
+    setLookupInstance(e.detail.type, e.detail.value)
+  })
 </script>
 
 </body>
