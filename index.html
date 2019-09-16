@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>web component demo</title>
+<title>A demo of web components used in the ClinGen app</title>
 <script async src="index.js"></script>
 <style>
 @import url(https://fonts.googleapis.com/css?family=Raleway:500,400,300,800,700);  
@@ -13,17 +13,40 @@
 
 <body>
 
-  <p>
-    <labeled-integer-select type="individual" count="20"></labeled-integer-select>
-  </p> 
+  <h1>A demo of web components used in the ClinGen app</h1>
 
-  <p>
-    <labeled-integer-select-collection>
+  <h1>IntegerSelect</h1>
+  <p>Here is a standalone instance of IntegerSelect.</p>
+  <pre>
+    &lt;integer-select type="individual" count="20">&lt;/integer-select>
+  </pre>
+
+  <integer-select type="individual" count="20"></integer-select>
+  
+  <h2>LabeledIntegerSelect</h2>
+  <p>Here is a standalone instance of LabeledIntegerSelect.</p>
+  <pre>
+    &lt;labeled-integer-select type="individual" count="20">&lt;/labeled-integer-select>
+  </pre>
+
+  <labeled-integer-select type="individual" count="20"></labeled-integer-select>
+
+  <h2>LabeledIntegerSelectCollection</h2>
+  <p>Here is a standalone instance of LabeledIntegerSelectCollection as used in the ClinGen app.</p>
+
+  <pre>
+    &lt;labeled-integer-select-collection>
+      &lt;labeled-integer-select type="individual" count="20">&lt;/labeled-integer-select>
+      &lt;labeled-integer-select type="family" count="20">&lt;/labeled-integer-select>
+      &lt;labeled-integer-select type="group" count="20">&lt;/labeled-integer-select>
+    &lt;/labeled-integer-select-collection>
+  </pre>
+
+  <labeled-integer-select-collection>
       <labeled-integer-select type="individual" count="20"></labeled-integer-select>
       <labeled-integer-select type="family" count="20"></labeled-integer-select>
       <labeled-integer-select type="group" count="20"></labeled-integer-select>
-    </labeled-integer-select-collection>
-  </p>
+  </labeled-integer-select-collection>  
 
 <script>
   // get last-saved lookup type
