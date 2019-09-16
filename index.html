@@ -1,62 +1,16 @@
 <html>
 <head>
-<title>ClinGen gene curation workflow</title>
-<link rel="stylesheet" href="https://jonudell.info/hlib/hlib.css" />
-<script src="https://jonudell.info/hlib/hlib2.bundle.js"></script>
-<script src="https://jonudell.info/hlib/visualize.js"></script>
-<script src="https://jonudell.info/hlib/state-machine.js"></script>
-<script src="https://jonudell.info/hlib/showdown.js"></script>
+<title>web component demo</title>
 <script async src="index.js"></script>
 <style>
 @import url(https://fonts.googleapis.com/css?family=Raleway:500,400,300,800,700);  
-a {
-   text-decoration: underline;
- }
  body {
   font-family: Raleway;
-  word-break: break-word;
-  margin-top:.25in;
-  font-size: smaller;
  }  
- div.inspector {
-  white-space: pre;
-  font-size: smaller;
- }
- li {
-   margin-bottom: 1em;
- }
- svg {
-   width: 80%;
-   height: auto;
- }
- ul {
-   list-style: none;
- }
- #formContainer {
-   margin-bottom: 20px;
- }
- .annotationTags a {
-   text-decoration: none;
- }
- .clinGenSelection {
-   font-style: italic;
- }
  </style>
 </head>
 
 <body>
-
-<h1>ClinGen curation workflow</h1>  
-
-<div id="formContainer">
-  <div id="userContainer"></div>  
-  <div id="tokenContainer"></div>
-  <div class="tokenReset" style="display: block;">
-    <a title="click to reset">reset API token</a>
-  </div>  
-</div>
-
-<p id="articleContext"></p>
 
 <labeled-integer-select-collection>
   <labeled-integer-select type="individual" count="20"></labeled-integer-select>
@@ -64,44 +18,14 @@ a {
   <labeled-integer-select type="group" count="20"></labeled-integer-select>
 </labeled-integer-select-collection>
 
-<div id="lookupContext"></div>
-
-<div id="viewer"></div>
-
-<div id="actionButton"></div>
-
-<h2>workflow navigator</h2>
-
-<div id="graph"></div>
-
-<h2>lookup summary</h2>
-
-<h3 id="individualLabel">Individual</h3>
-<div id="individualResults"></div>
-
-<h3 id="familyLabel">Family</h3>
-<div id="familyResults"></div>
-
-<h3 id="groupLabel">Group</h3>
-<div id="groupResults"></div>
-
-<hr>
-
-<p>
-  <button title="start a new gene curation" onclick="resetWorkflow()" class="resetButton">reset</button>
-</p> 
-
 <script>
-  setTimeout(_ => {
-    hlib.manageTokenDisplayAndReset()
-    const lookupType = getAppVar(appStateKeys.LOOKUP_TYPE)
-    const e = new CustomEvent('labeled-integer-select-event', { 
-      detail: {
-        type: lookupType,
-        value: getLookupInstance(lookupType)
-      }
-    })
-    LabeledIntegerSelectCollection.handler(e)
+  const e = new CustomEvent('labeled-integer-select-event', { 
+    detail: {
+      type: lookupType,
+      value: getLookupInstance(lookupType)
+    }
+  })
+  LabeledIntegerSelectCollection.handler(e)
   }, 400)
 
   window.addEventListener('labeled-integer-select-event', e => {
