@@ -1,7 +1,6 @@
 <html>
 <head>
-<title>A demo of web components used in the ClinGen app</title>
-<script async src="index.js"></script>
+<title>Web components used in the ClinGen app</title>
 <style>
 @import url(https://fonts.googleapis.com/css?family=Raleway:500,400,300,800,700);  
  body {
@@ -13,44 +12,47 @@
 
 <body>
 
-  <h1>A demo of web components used in the ClinGen app</h1>
+  <h1>Web components used in the ClinGen app</h1>
 
-  <h1>IntegerSelect</h1>
+  <h2>Part 1: IntegerSelect</h2>
   <p>Here is a standalone instance of IntegerSelect.</p>
-  <pre>
-    &lt;integer-select type="individual" count="20">&lt;/integer-select>
-  </pre>
 
-  <integer-select type="individual" count="20"></integer-select>
+
+  <pre style="color:#000000;background:#ffffff;">  <span style="color:#a65700; ">&lt;</span><span style="color:#800000; font-weight:bold; ">select</span><span style="color:#274796; "> is</span><span style="color:#808030; ">=</span><span style="color:#0000e6; ">"integer-select"</span><span style="color:#274796; "> </span><span style="color:#074726; ">type</span><span style="color:#808030; ">=</span><span style="color:#0000e6; ">"individual"</span><span style="color:#274796; "> count</span><span style="color:#808030; ">=</span><span style="color:#0000e6; ">"20"</span><span style="color:#a65700; ">&gt;</span><span style="color:#a65700; ">&lt;/</span><span style="color:#800000; font-weight:bold; ">select</span><span style="color:#a65700; ">&gt;</span>
+  </pre>
   
-  <h2>LabeledIntegerSelect</h2>
+  <select is="integer-select" type="individual" count="20"></select>
+  
+  <h2>Part 2: LabeledIntegerSelect</h2>
   <p>Here is a standalone instance of LabeledIntegerSelect.</p>
-  <pre>
-    &lt;labeled-integer-select type="individual" count="20">&lt;/labeled-integer-select>
+
+  <pre style="color:#000000;background:#ffffff;">  <span style="color:#a65700; ">&lt;</span><span style="color:#5f5035; ">labeled-integer-select</span><span style="color:#274796; "> </span><span style="color:#074726; ">type</span><span style="color:#808030; ">=</span><span style="color:#0000e6; ">"individual"</span><span style="color:#274796; "> count</span><span style="color:#808030; ">=</span><span style="color:#0000e6; ">"20"</span><span style="color:#a65700; ">&gt;</span><span style="color:#a65700; ">&lt;/</span><span style="color:#5f5035; ">labeled-integer-select</span><span style="color:#a65700; ">&gt;</span>
   </pre>
 
   <labeled-integer-select type="individual" count="20"></labeled-integer-select>
 
-  <h2>LabeledIntegerSelectCollection</h2>
+  <h2>Part 3: LabeledIntegerSelectCollection</h2>
   <p>Here is a standalone instance of LabeledIntegerSelectCollection as used in the ClinGen app.</p>
 
-  <pre>
-    &lt;labeled-integer-select-collection>
-      &lt;labeled-integer-select type="individual" count="20">&lt;/labeled-integer-select>
-      &lt;labeled-integer-select type="family" count="20">&lt;/labeled-integer-select>
-      &lt;labeled-integer-select type="group" count="20">&lt;/labeled-integer-select>
-    &lt;/labeled-integer-select-collection>
-  </pre>
 
+  <pre style="color:#000000;background:#ffffff;"><span style="color:#808030; ">&nbsp;&nbsp;&lt;</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select<span style="color:#808030; ">-</span>collection<span style="color:#808030; ">&gt;</span>
+    <span style="color:#808030; ">&lt;</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select type<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">individual</span><span style="color:#800000; ">"</span> count<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">20</span><span style="color:#800000; ">"</span><span style="color:#808030; ">&gt;</span><span style="color:#808030; ">&lt;</span><span style="color:#808030; ">/</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select<span style="color:#808030; ">&gt;</span>
+    <span style="color:#808030; ">&lt;</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select type<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">family</span><span style="color:#800000; ">"</span> count<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">20</span><span style="color:#800000; ">"</span><span style="color:#808030; ">&gt;</span><span style="color:#808030; ">&lt;</span><span style="color:#808030; ">/</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select<span style="color:#808030; ">&gt;</span>
+    <span style="color:#808030; ">&lt;</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select type<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">group</span><span style="color:#800000; ">"</span> count<span style="color:#808030; ">=</span><span style="color:#800000; ">"</span><span style="color:#0000e6; ">20</span><span style="color:#800000; ">"</span><span style="color:#808030; ">&gt;</span><span style="color:#808030; ">&lt;</span><span style="color:#808030; ">/</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select<span style="color:#808030; ">&gt;</span>
+  <span style="color:#808030; ">&lt;</span><span style="color:#808030; ">/</span>labeled<span style="color:#808030; ">-</span>integer<span style="color:#808030; ">-</span>select<span style="color:#808030; ">-</span>collection<span style="color:#808030; ">&gt;</span>
+  </pre>
+  
   <labeled-integer-select-collection>
       <labeled-integer-select type="individual" count="20"></labeled-integer-select>
       <labeled-integer-select type="family" count="20"></labeled-integer-select>
       <labeled-integer-select type="group" count="20"></labeled-integer-select>
   </labeled-integer-select-collection>  
 
+<script src="index.js"></script>
+
 <script>
   // get last-saved lookup type
-  const lookupType = getAppVar(appStateKeys.LOOKUP_TYPE)
+  let lookupType = getAppVar(appStateKeys.LOOKUP_TYPE)
 
   // tell the LabeledIntegerSelectCollection component to reflect the last-saved lookup
   const e = new CustomEvent('labeled-integer-select-event', { 
@@ -61,7 +63,7 @@
   })
   LabeledIntegerSelectCollection.handler(e)
 
-  // save subsequent lookups reported by the LabeledIntegerSelectCollection component
+    // save subsequent lookups reported by the LabeledIntegerSelectCollection component
   window.addEventListener('labeled-integer-select-event', e => {
     console.log(JSON.stringify(e.detail))
     setAppVar(appStateKeys.LOOKUP_TYPE, e.detail.type)

@@ -104,16 +104,16 @@ class IntegerSelect extends HTMLSelectElement {
       }
     })
   const closestCollection = this.closest('labeled-integer-select-collection')
-  if (closestCollection) {
-    closestCollection.dispatchEvent(e)
-  }
+    if (closestCollection) {
+      closestCollection.dispatchEvent(e)
+    }    
   dispatchEvent(e)
 }
   connectedCallback() {
     const count = parseInt(this.getAttribute('count'))
     let options = ''
     const lookupInstance = parseInt(getLookupInstance(this.type))
-    for (let i = 1; i < count; i++) {
+    for (let i = 1; i <= count; i++) {
       let selected = ( i == lookupInstance ) ? 'selected' : ''
       options += `<option ${selected}>${i}</option>`
     }
