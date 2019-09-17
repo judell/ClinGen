@@ -45,17 +45,15 @@ function getLookupKey(type) {
 // custom elements
 
 class LabeledIntegerSelect extends HTMLElement {
-  type
-  count
   constructor() {
     super()
   }
   connectedCallback() {
-    this.type = this.getAttribute('type')
-    this.count = this.getAttribute('count')
+    const type = this.getAttribute('type')
+    const count = this.getAttribute('count')
     this.innerHTML = `
-      <span class="integer-select-type">${this.type}</span>
-      <select is="integer-select" type="${this.type}" count="${this.count}"></select>
+      <span class="integer-select-type">${type}</span>
+      <select is="integer-select" type="${type}" count="${count}"></select>
       `
   }
 }
@@ -91,15 +89,13 @@ class LabeledIntegerSelectCollection extends HTMLElement {
 customElements.define('labeled-integer-select-collection', LabeledIntegerSelectCollection)
 
 class IntegerSelect extends HTMLSelectElement {
-  type
   constructor() {
     super()
-    this.type = this.getAttribute('type')
   }
   relaySelection() {
     const e = new CustomEvent('labeled-integer-select-event', { 
       detail: {
-        type: this.type,
+        type: this.getAttribute('type'),
         value: this.options[this.selectedIndex].value
       }
     })
