@@ -289,7 +289,8 @@ function saveVariantIdLookup() {
     alert('url does not match "variation/*"')
     return
   }
-  const text = 'variant id lookup result'
+  const resultUrl = getAppVar(appStateKeys.TARGET_URI)
+  const text = `variant id lookup result: <a href="${resultUrl}">${resultUrl}</a>`
   const tags = ['variantLookup', `variant:${variantId}`]
   const transition = 'saveVariantIdLookup'
   // save a page note on the article
@@ -302,7 +303,8 @@ function saveAlleleIdLookup() {
     alert('url does not match "caid=CA*"')
     return
   }
-  const text = 'allele id lookup result'
+  const resultUrl = getAppVar(appStateKeys.TARGET_URI)
+  const text = `allele id lookup result: <a href="${resultUrl}">${resultUrl}</a>`
   const tags = ['alleleLookup', `allele:${alleleId}`]
   const transition = 'saveAlleleIdLookup'
   // save a page note on the article
