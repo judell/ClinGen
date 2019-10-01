@@ -251,6 +251,7 @@ function alleleIdLookup() {
 
 function saveMonarchLookup() {
   const here = decodeURIComponent(location.href)
+  here = here.replace('phenotype/HP%3A', 'phenotype/HP:')
   const match = here.match(/\/phenotype\/(HP.+)$/)
   if (!match) {
     alert('url does not match "phenotype/HP*"')
