@@ -318,7 +318,11 @@ function launchedFromArticlePage() {
   const uri = new URL(location.href)
   const search = decodeURIComponent(uri.search)
   const articleUrl = getAppVar(appStateKeys.ARTICLE_URL)
-  return search.endsWith(articleUrl)
+  if (articleUrl === 'http://localhost:8001/test.html') {
+    return false
+  } else {
+    return search.endsWith(articleUrl)
+  }
 }
 
 function extractVariantFromUrl(url) {
