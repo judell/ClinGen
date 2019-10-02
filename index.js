@@ -135,7 +135,7 @@ async function app(event) {
       appendViewer(`
       ${lookupTemplate}
       <p>Nothing is selected in the current article.
-      <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} ClinGen button to save the selection and continue.
+      <p>To proceed with HPO lookups, select a term in the article, then click the ${appWindowName} button to save the selection and continue.
       <p>Variant ID lookups and allele lookups don't depend on a selection, so you can proceed directly with those.
       <ul>
       ${variantLookupTemplate}
@@ -250,7 +250,7 @@ function alleleIdLookup() {
 // lookup savers
 
 function saveMonarchLookup() {
-  const here = decodeURIComponent(location.href)
+  let here = decodeURIComponent(location.href)
   here = here.replace('phenotype/HP%3A', 'phenotype/HP:')
   const match = here.match(/\/phenotype\/(HP.+)$/)
   if (!match) {
