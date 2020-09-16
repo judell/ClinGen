@@ -1,10 +1,10 @@
-﻿import urlparse
+# a wrapper for the dot command, part of graphviz (sudo apt install graphviz)
+
 import logging
 import os
 from pyramid.httpexceptions import HTTPFound
 from pyramid.view import view_config
 from pyramid.response import FileResponse
-from requests_oauthlib import OAuth1
 
 logging.basicConfig(format='%(asctime)s %(levelname)-8s %(message)s',
                     datefmt='%m-%d %H:%M',
@@ -16,8 +16,8 @@ console.setLevel(logging.DEBUG)
 logger.addHandler(console)
 
 server_scheme = 'http'
-server_host = 'h.jonudell.info'
-server_port = 5050
+server_host = 'localhost'
+server_port = 8002
 
 def serve_file(path=None, file=None, request=None, content_type=None):
     response = FileResponse('%s/%s' % (path, file),
@@ -28,7 +28,7 @@ def serve_file(path=None, file=None, request=None, content_type=None):
 
 @view_config( route_name='dot' )
 def dot(request):
-    with open('fsm.dot','w') as fsm:
+    with open('fsm.dot','wb') as fsm:
       fsm.write(request.body)
     os.system('dot -Nfontname="Raleway" -Efontname="Raleway" -Tsvg fsm.dot > fsm.svg')
     return serve_file('.', 'fsm.svg', request, 'image/svg+xml')
@@ -42,7 +42,7 @@ config = Configurator()
 
 config.scan()
 
-config.add_route('dot',      '/dot')
+config.add_route('dot', '/dot')
 
 app = config.make_wsgi_app()
 

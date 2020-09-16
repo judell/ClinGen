@@ -575,7 +575,7 @@ async function refreshSvg() {
   dot = dot.replace('{', '{\n  rankdir=LR;') // use horizontal layout
   const opts = {
     method: 'POST',
-    url: 'https://h.jonudell.info/dot',
+    url: 'http://localhost:8002/dot',
     params: dot,
   }
   const data = await hlib.httpRequest(opts)
